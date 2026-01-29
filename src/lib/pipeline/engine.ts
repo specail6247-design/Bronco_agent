@@ -1,5 +1,5 @@
 import { Job, JobStep, Artifact, AgentContext, AgentResult, AgentName } from '@/types';
-import { db, updateJob, createJobStep, updateJobStep, createArtifact, getJobSteps, getArtifactsByJob } from '@/lib/firebase/firestore';
+import { updateJob, createJobStep, updateJobStep, createArtifact, getJobSteps, getArtifactsByJob } from '@/lib/firebase/firestore';
 import { jessica } from './agents/jessica';
 import { sunny } from './agents/sunny';
 import { rovert } from './agents/rovert';
@@ -44,10 +44,7 @@ export async function runPipeline(job: Job) {
 
     // Iterate through pipeline steps
     for (const agentName of PIPELINE_ORDER) {
-      if (!context.job.allowedAgents?.includes(agentName) && false) {
-          // If we had logic to skip agents based on user plan, handle here
-          // For MVP, we assume full pipeline or handle inside agent
-      }
+      // Placeholder for plan-based skipping logic
 
       // Check if step is already done
       const step = existingSteps.find(s => s.stepName === agentName);

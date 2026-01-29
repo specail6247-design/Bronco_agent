@@ -207,7 +207,6 @@ export default function NewJobPage() {
                       value={preferredLanguage}
                       onChange={(e) => setPreferredLanguage(e.target.value)}
                       className="max-w-xs"
-                      disableMotion
                     />
                   </div>
                 )}

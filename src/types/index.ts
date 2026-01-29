@@ -24,6 +24,7 @@ export type Platform =
   | 'threads' 
   | 'reddit' 
   | 'x' 
+  | 'linkedin' 
   | 'facebook';
 
 // Agent Names
@@ -59,6 +60,14 @@ export interface User {
   role: UserRole;
   allowedAgents: AgentName[];
   expiryAt: Date | null;
+  connections?: {
+    [platform: string]: {
+      connected: boolean;
+      email?: string;
+      channelName?: string;
+      updatedAt: any;
+    }
+  };
   inviteKeyId?: string;
   createdAt: Date;
   lastActiveAt?: Date;

@@ -326,7 +326,7 @@ export default function AdminPage() {
                                 <div className="flex items-center gap-2">
                                   <button 
                                     className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                    onClick={() => handleRevokeUser(user.id)}
+                                    onClick={() => handleRevokeUser(user.id!)}
                                     title="Revoke Access"
                                   >
                                     <Trash2 size={16} />

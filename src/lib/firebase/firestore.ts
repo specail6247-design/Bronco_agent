@@ -56,7 +56,7 @@ export async function getUserById(userId: string): Promise<User | null> {
   const docRef = doc(usersCollection, userId);
   const docSnap = await getDoc(docRef);
   if (!docSnap.exists()) return null;
-  return { id: docSnap.id, ...docSnap.data() } as User;
+  return { ...docSnap.data(), id: docSnap.id } as User;
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
@@ -64,7 +64,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
   const snapshot = await getDocs(q);
   if (snapshot.empty) return null;
   const doc = snapshot.docs[0];
-  return { id: doc.id, ...doc.data() } as User;
+  return { ...doc.data(), id: doc.id } as User;
 }
 
 export async function createUser(userId: string, userData: Omit<User, 'id'>): Promise<void> {
@@ -72,7 +72,7 @@ export async function createUser(userId: string, userData: Omit<User, 'id'>): Pr
   await setDoc(docRef, {
     ...userData,
     createdAt: Timestamp.now(),
-  });
+  } as any);
 }
 
 export async function updateUser(userId: string, updates: Partial<User>): Promise<void> {
@@ -88,7 +88,7 @@ export async function getUsersCount(): Promise<number> {
 export async function getAllUsers(): Promise<User[]> {
   const q = query(usersCollection, orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+  return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as User));
 }
 
 // InviteKey operations
@@ -97,7 +97,7 @@ export async function getInviteKeyByHash(keyHash: string): Promise<InviteKey | n
   const snapshot = await getDocs(q);
   if (snapshot.empty) return null;
   const doc = snapshot.docs[0];
-  return { id: doc.id, ...doc.data() } as InviteKey;
+  return { ...doc.data(), id: doc.id } as InviteKey;
 }
 
 export async function createInviteKey(keyData: Omit<InviteKey, 'id'>): Promise<string> {
@@ -105,7 +105,7 @@ export async function createInviteKey(keyData: Omit<InviteKey, 'id'>): Promise<s
   await setDoc(docRef, {
     ...keyData,
     createdAt: Timestamp.now(),
-  });
+  } as any);
   return docRef.id;
 }
 
@@ -119,7 +119,7 @@ export async function getJobById(jobId: string): Promise<Job | null> {
   const docRef = doc(jobsCollection, jobId);
   const docSnap = await getDoc(docRef);
   if (!docSnap.exists()) return null;
-  return { id: docSnap.id, ...docSnap.data() } as Job;
+  return { ...docSnap.data(), id: docSnap.id } as Job;
 }
 
 export async function createJob(jobData: Omit<Job, 'id'>): Promise<string> {
@@ -128,7 +128,7 @@ export async function createJob(jobData: Omit<Job, 'id'>): Promise<string> {
     ...jobData,
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
-  });
+  } as any);
   return docRef.id;
 }
 
@@ -143,7 +143,7 @@ export async function updateJob(jobId: string, updates: Partial<Job>): Promise<v
 export async function getJobsByOwner(ownerId: string): Promise<Job[]> {
   const q = query(jobsCollection, where('ownerId', '==', ownerId), orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
+  return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Job));
 }
 
 export async function getScheduledJobs(): Promise<Job[]> {
@@ -155,19 +155,19 @@ export async function getScheduledJobs(): Promise<Job[]> {
     orderBy('scheduledAt', 'asc')
   );
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
+  return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Job));
 }
 
 // JobStep operations
 export async function getJobSteps(jobId: string): Promise<JobStep[]> {
   const q = query(jobStepsCollection, where('jobId', '==', jobId));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as JobStep));
+  return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as JobStep));
 }
 
 export async function createJobStep(stepData: Omit<JobStep, 'id'>): Promise<string> {
   const docRef = doc(jobStepsCollection);
-  await setDoc(docRef, stepData);
+  await setDoc(docRef, stepData as any);
   return docRef.id;
 }
 
@@ -180,7 +180,7 @@ export async function updateJobStep(stepId: string, updates: Partial<JobStep>): 
 export async function getArtifactsByJob(jobId: string): Promise<Artifact[]> {
   const q = query(artifactsCollection, where('jobId', '==', jobId), orderBy('createdAt', 'asc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Artifact));
+  return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Artifact));
 }
 
 export async function createArtifact(artifactData: Omit<Artifact, 'id'>): Promise<string> {
@@ -188,7 +188,7 @@ export async function createArtifact(artifactData: Omit<Artifact, 'id'>): Promis
   await setDoc(docRef, {
     ...artifactData,
     createdAt: Timestamp.now(),
-  });
+  } as any);
   return docRef.id;
 }
 
@@ -198,5 +198,5 @@ export async function logAuditEvent(event: Omit<AuditEvent, 'id' | 'createdAt'>)
   await setDoc(docRef, {
     ...event,
     createdAt: Timestamp.now(),
-  });
+  } as any);
 }

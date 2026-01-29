@@ -41,3 +41,5 @@ next-env.d.ts
 !package.json
 !tsconfig.json
 !package-lock.json
+
+/net-commander

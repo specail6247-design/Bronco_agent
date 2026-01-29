@@ -17,8 +17,8 @@ export class YouTubeAdapter implements PlatformAdapter {
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     return {
-      postId: \`yt_\${Date.now()}\`,
-      url: \`https://youtube.com/watch?v=\${Date.now()}\`,
+      postId: `yt_${Date.now()}`,
+      url: `https://youtube.com/watch?v=${Date.now()}`,
       status: 'published' as const,
     };
   }

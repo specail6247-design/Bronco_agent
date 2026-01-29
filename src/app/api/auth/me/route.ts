@@ -47,12 +47,20 @@ export async function GET(req: NextRequest) {
       ? ['jessica', 'sunny', 'rovert', 'tim', 'david', 'john']
       : (userData?.allowedAgents || ['jessica', 'sunny']);
 
+    // 연동 정보 가져오기 (YouTube 등)
+    const connectionsSnap = await adminDb.collection('users').doc(uid).collection('connections').get();
+    const connections = connectionsSnap.docs.reduce((acc, doc) => {
+      acc[doc.id] = { connected: true, ...doc.data() };
+      return acc;
+    }, {} as any);
+
     return NextResponse.json({
       user: { 
         id: uid, 
         ...userData,
         role,
-        allowedAgents
+        allowedAgents,
+        connections
       }
     });
   } catch (error) {

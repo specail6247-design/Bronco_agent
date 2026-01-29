@@ -14,8 +14,8 @@ export class TikTokAdapter implements PlatformAdapter {
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     return {
-      postId: \`tt_\${Date.now()}\`,
-      url: \`https://tiktok.com/@user/video/\${Date.now()}\`,
+      postId: `tt_${Date.now()}`,
+      url: `https://tiktok.com/@user/video/${Date.now()}`,
       status: 'published' as const,
     };
   }

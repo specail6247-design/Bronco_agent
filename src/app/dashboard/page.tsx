@@ -10,7 +10,10 @@ import {
   LogOut, 
   Settings, 
   Zap,
-  ChevronRight
+  ChevronRight,
+  Youtube,
+  Instagram,
+  Check
 } from 'lucide-react';
 import { 
   GlassCard, 
@@ -202,6 +205,170 @@ export default function DashboardPage() {
                   <span>Your 6-agent team is ready to create amazing content.</span>
                 </p>
               </div>
+
+              <section className="mb-12">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="heading-display text-lg text-slate-700">
+                    <span>Platform Connections</span>
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    <span>{Object.values(user?.connections || {}).filter(c => (c as any).connected).length} Connected</span>
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* YouTube Connection Card */}
+                  <GlassCard className="p-4" disableMotion>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center text-red-600">
+                          <Youtube size={18} />
+                        </div>
+                        <span className="font-semibold text-slate-700">YouTube</span>
+                      </div>
+                      {user?.connections?.youtube?.connected ? (
+                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white">
+                          <Check size={12} />
+                        </span>
+                      ) : (
+                        <span className="w-2 h-2 rounded-full bg-slate-300" />
+                      )}
+                    </div>
+                    
+                    {user?.connections?.youtube?.connected ? (
+                      <div>
+                        <p className="text-xs text-slate-500 mb-1">Connected as</p>
+                        <p className="text-sm font-medium text-slate-800 truncate">
+                          {user.connections.youtube.channelName || user.connections.youtube.email}
+                        </p>
+                      </div>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="w-full text-xs"
+                        onClick={() => window.location.href = `/api/auth/youtube/login?uid=${user?.id}`}
+                      >
+                        <span>Connect Channel</span>
+                      </Button>
+                    )}
+                  </GlassCard>
+
+                  {/* TikTok Connection Card */}
+                  <GlassCard className={`p-4 ${!user?.connections?.tiktok?.connected ? '' : ''}`} disableMotion>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white">
+                          <Zap size={18} />
+                        </div>
+                        <span className="font-semibold text-slate-700">TikTok</span>
+                      </div>
+                      {user?.connections?.tiktok?.connected ? (
+                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white">
+                          <Check size={12} />
+                        </span>
+                      ) : (
+                        <span className="w-2 h-2 rounded-full bg-slate-300" />
+                      )}
+                    </div>
+                    
+                    {user?.connections?.tiktok?.connected ? (
+                      <div>
+                        <p className="text-xs text-slate-500 mb-1">Connected</p>
+                        <p className="text-sm font-medium text-slate-800 truncate">
+                          TikTok Business Channel
+                        </p>
+                      </div>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="w-full text-xs"
+                        onClick={() => window.location.href = `/api/auth/tiktok/login?uid=${user?.id}`}
+                      >
+                        <span>Connect Channel</span>
+                      </Button>
+                    )}
+                  </GlassCard>
+
+                  {/* Instagram Connection Card */}
+                  <GlassCard className="p-4" disableMotion>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-500 via-red-500 to-purple-600 flex items-center justify-center text-white">
+                          <Instagram size={18} />
+                        </div>
+                        <span className="font-semibold text-slate-700">Instagram</span>
+                      </div>
+                      <span className="w-2 h-2 rounded-full bg-slate-300" />
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="w-full text-xs"
+                      onClick={() => window.location.href = `/api/auth/meta/login?uid=${user?.id}`}
+                    >
+                      <span>Connect Profile</span>
+                    </Button>
+                  </GlassCard>
+
+                  {/* Facebook Connection Card */}
+                  <GlassCard className="p-4" disableMotion>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
+                          <Facebook size={18} />
+                        </div>
+                        <span className="font-semibold text-slate-700">Facebook</span>
+                      </div>
+                      <span className="w-2 h-2 rounded-full bg-slate-300" />
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="w-full text-xs"
+                      onClick={() => window.location.href = `/api/auth/meta/login?uid=${user?.id}`}
+                    >
+                      <span>Connect Page</span>
+                    </Button>
+                  </GlassCard>
+
+                  {/* Threads Connection Card */}
+                  <GlassCard className="p-4" disableMotion>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center text-white">
+                          <Hash size={18} />
+                        </div>
+                        <span className="font-semibold text-slate-700">Threads</span>
+                      </div>
+                      <span className="w-2 h-2 rounded-full bg-slate-300" />
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="w-full text-xs"
+                      onClick={() => window.location.href = `/api/auth/threads/login?uid=${user?.id}`}
+                    >
+                      <span>Connect Account</span>
+                    </Button>
+                  </GlassCard>
+
+                  {/* Instagram Placeholder */}
+                  <GlassCard className="p-4 opacity-60" disableMotion>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600">
+                          <Instagram size={18} />
+                        </div>
+                        <span className="font-semibold text-slate-700">Instagram</span>
+                      </div>
+                      <span className="text-[10px] bg-slate-200 px-1.5 py-0.5 rounded text-slate-500">Soon</span>
+                    </div>
+                    <p className="text-xs text-slate-400">Meta Graph API setup required.</p>
+                  </GlassCard>
+                </div>
+              </section>
 
               <section className="mb-12">
                 <h3 className="heading-display text-lg text-slate-700 mb-4">
