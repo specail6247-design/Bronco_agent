@@ -2,209 +2,210 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { 
-  ChevronLeft, 
-  Calendar, 
-  Clock, 
-  Globe, 
-  FileText,
-  AlertCircle
-} from 'lucide-react';
-import { GlassCard, LabelCard, Button, StatusBadge, AgentBanner } from '@/components/ui';
-import type { Job, JobStep, Artifact, AgentName } from '@/types';
+import { ChevronLeft, FileText, Search, PenTool, Layout, X, Trash2 } from 'lucide-react';
+import { Button, StatusBadge, AgentBanner, GlassCard, ActivityLog } from '@/components/ui';
+import type { AgentName } from '@/types';
 import ClientOnly from '@/components/ClientOnly';
 
 export default function JobDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const id = params.id as string;
+  const id = params?.id ? (params.id as string) : '';
   
-  const [job, setJob] = useState<Job | null>(null);
-  const [steps, setSteps] = useState<JobStep[]>([]);
-  const [artifacts, setArtifacts] = useState<Artifact[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [job, setJob] = useState<any>(null);
+  const [steps, setSteps] = useState<any[]>([]);
+  const [artifacts, setArtifacts] = useState<any[]>([]);
+   const [loading, setLoading] = useState(true);
+  const [advancing, setAdvancing] = useState(false);
+  const [selectedArtifact, setSelectedArtifact] = useState<any>(null);
+  const [activeAgentLog, setActiveAgentLog] = useState<AgentName | null>(null);
+
+  const fetchData = async () => {
+    if (!id || id === '[id]') return;
+    try {
+      const res = await fetch(`/api/jobs/${id}`);
+      if (!res.ok) throw new Error('API down');
+      const data = await res.json();
+      if (data.job) setJob(data.job);
+      if (data.steps) setSteps(data.steps);
+      if (data.artifacts) setArtifacts(data.artifacts);
+    } catch (e) {
+      console.error('Fetch error:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (!id) return;
-
-    const fetchJobData = async () => {
-      try {
-        const res = await fetch(`/api/jobs/${id}`);
-        if (res.ok) {
-          const data = await res.json();
-          setJob(data.job);
-          setSteps(data.steps);
-          setArtifacts(data.artifacts);
-        }
-      } catch (error) {
-        console.error('Failed to fetch job', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchJobData();
+    fetchData();
   }, [id]);
 
-  const agents: AgentName[] = ['jessica', 'sunny', 'rovert', 'tim', 'david', 'john'];
-
-  const getStepStatus = (agentName: AgentName) => {
-    const step = steps.find(s => s.stepName === agentName);
-    return step ? step.state : 'WAITING';
+  const handleAdvance = async () => {
+    if (!id) return;
+    setAdvancing(true);
+    try {
+      const res = await fetch(`/api/jobs/${id}/simulate`, { method: 'POST' });
+      if (res.ok) await fetchData(); // Reload data without full page refresh
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAdvancing(false);
+    }
   };
+
+  const handleDelete = async () => {
+    if (!id || !confirm('정말 이 프로젝트를 삭제하시겠습니까?')) return;
+    try {
+      const res = await fetch(`/api/jobs/${id}/delete`, { method: 'DELETE' });
+      if (res.ok) router.push('/dashboard');
+      else alert('삭제 실패');
+    } catch (e) {
+      console.error(e);
+      alert('삭제 중 오류 발생');
+    }
+  };
+
+  const agents = ['jessica', 'sunny', 'rovert', 'tim', 'david', 'john'];
+
+  const getArtifactIcon = (type: string) => {
+    switch (type) {
+      case 'research': return <Search className="text-blue-500" size={18} />;
+      case 'script': return <PenTool className="text-purple-500" size={18} />;
+      case 'storyboard': return <Layout className="text-amber-500" size={18} />;
+      default: return <FileText className="text-slate-500" size={18} />;
+    }
+  };
+
+  if (loading) return <div className="p-20 text-center text-slate-400 font-medium animate-pulse">Initializing Agent Environment...</div>;
+
+  const currentJob = job || { topic: 'Loading topic...', state: 'WAITING' };
 
   return (
     <ClientOnly>
-      <main 
-        className="min-h-screen p-6 pb-12 notranslate" 
-        translate="no" 
-        suppressHydrationWarning={true}
-      >
-        {loading ? (
-          <div className="flex items-center justify-center p-12">
-            <span className="text-slate-500">Loading...</span>
-          </div>
-        ) : !job ? (
-          <div className="p-12 text-center">
-            <span className="text-slate-500">Job not found</span>
-            <div className="mt-4">
-              <Button onClick={() => router.push('/dashboard')}>
-                <span>Back to Dashboard</span>
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="max-w-5xl mx-auto">
-            {/* Header */}
-            <div className="flex items-center gap-4 mb-6">
-              <Button 
-                variant="ghost" 
-                size="sm"
-                icon={<ChevronLeft size={18} />}
-                onClick={() => router.push('/dashboard')}
-              >
-                <span>Back</span>
-              </Button>
-              <div className="flex-1">
-                <h1 className="heading-display text-2xl text-slate-800">
-                  <span>{job.topic}</span>
-                </h1>
-                <div className="flex items-center gap-4 text-sm text-slate-500 mt-1">
-                  <span className="flex items-center gap-1">
-                    <Calendar size={14} /> 
-                    <span>{new Date(job.scheduledAt).toLocaleDateString()}</span>
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Globe size={14} /> 
-                    <span>{job.languageMode === 'auto' ? 'Auto Language' : job.preferredLanguage?.toUpperCase()}</span>
-                  </span>
-                  <div className="flex gap-1">
-                    {job.platforms.map(p => (
-                      <span key={p} className="px-1.5 py-0.5 bg-slate-100 rounded text-xs">
-                        {p}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex flex-col items-end gap-1">
-                <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Status</span>
-                <StatusBadge status={job.state === 'NEED_APPROVAL' ? 'WAITING' : job.state as any} />
+      <main className="max-w-5xl mx-auto p-4 md:p-10 space-y-8">
+        {/* Header Section */}
+        <div className="bg-white shadow-xl rounded-2xl border border-slate-100 p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-6">
+            <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard')} className="p-2">
+              <ChevronLeft size={24} />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-black text-slate-900 leading-tight">{currentJob.topic}</h1>
+              <div className="flex items-center gap-3 mt-2">
+                <StatusBadge status={currentJob.state} />
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Job ID: {id}</span>
               </div>
             </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              onClick={handleDelete}
+              className="text-slate-300 hover:text-red-500 hover:bg-red-50 p-3"
+            >
+              <Trash2 size={24} />
+            </Button>
+            <button 
+              onClick={handleAdvance}
+              disabled={advancing || !id}
+              className={`
+                px-8 py-4 rounded-xl font-black text-sm uppercase tracking-widest transition-all shadow-lg active:scale-95
+                ${advancing ? 'bg-slate-100 text-slate-400' : 'bg-orange-500 hover:bg-orange-600 text-white shadow-orange-200'}
+              `}
+            >
+              {advancing ? "Synchronizing..." : "Advance Step"}
+            </button>
+          </div>
+        </div>
 
-            <div className="grid lg:grid-cols-3 gap-8">
-              {/* Left Column: Timeline / Pipeline */}
-              <div className="lg:col-span-2 space-y-6">
-                <h2 className="text-lg font-semibold text-slate-700">Production Pipeline</h2>
-                
-                <div className="space-y-4">
-                  {agents.map((agent, index) => {
-                    const status = getStepStatus(agent);
-                    return (
-                      <div key={agent} className="relative pl-8">
-                        {/* Connecting Line */}
-                        {index < agents.length - 1 && (
-                          <div className={`
-                            absolute left-[11px] top-8 bottom-[-16px] w-[2px]
-                            ${status === 'DONE' ? 'bg-emerald-200' : 'bg-slate-200'}
-                          `} />
-                        )}
-                        
-                        {/* Status Dot */}
-                        <div className={`
-                          absolute left-0 top-3 w-6 h-6 rounded-full border-2 flex items-center justify-center z-10
-                          ${status === 'DONE' ? 'bg-emerald-500 border-emerald-500' : 
-                            status === 'WORKING' ? 'bg-white border-amber-500' : 
-                            'bg-white border-slate-300'}
-                        `}>
-                          {status === 'DONE' && <div className="w-2 h-2 bg-white rounded-full" />}
-                          {status === 'WORKING' && <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />}
-                        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column: Agent Roadmap */}
+          <div className="lg:col-span-1 space-y-4">
+            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest px-2">Workforce Roadmap</h3>
+            <div className="bg-white rounded-2xl border border-slate-100 p-6 space-y-3">
+              {agents.map((a) => {
+                const s = steps.find((st: any) => st.stepName === a);
+                return (
+                  <AgentBanner 
+                    key={a} 
+                    agent={a as any} 
+                    status={s?.state || 'WAITING'} 
+                    compact 
+                    onClick={() => setActiveAgentLog(a as any)}
+                  />
+                );
+              })}
+            </div>
+          </div>
 
-                        <AgentBanner 
-                          agent={agent} 
-                          status={status}
-                          compact
-                        />
-                        
-                        {/* Special case for Approval Gate after Tim */}
-                        {agent === 'tim' && job.state === 'NEED_APPROVAL' && (
-                          <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-xl flex items-center gap-3">
-                            <AlertCircle className="text-purple-600" />
-                            <div>
-                              <p className="font-medium text-purple-900">Owner Approval Required</p>
-                              <p className="text-sm text-purple-700">Check your Telegram to approve the upload package.</p>
-                            </div>
-                          </div>
-                        )}
+          {/* Right Column: Artifacts / Outputs */}
+          <div className="lg:col-span-2 space-y-4">
+            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest px-2">Agent Artifacts</h3>
+            {artifacts.length === 0 ? (
+              <GlassCard className="text-center py-20 bg-white/50 border-dashed border-2">
+                <FileText size={48} className="mx-auto text-slate-200 mb-4 opacity-50" />
+                <p className="text-slate-400 font-medium">No outputs generated yet.</p>
+                <p className="text-xs text-slate-300 mt-1 italic">Click 'Advance Step' to wake up the agents.</p>
+              </GlassCard>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {artifacts.map((art) => (
+                  <GlassCard 
+                    key={art.id} 
+                    className="p-5 cursor-pointer hover:border-orange-200 transition-all bg-white group"
+                    onClick={() => setSelectedArtifact(art)}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="p-2 bg-slate-50 rounded-lg group-hover:bg-orange-50 transition-colors">
+                        {getArtifactIcon(art.type)}
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Right Column: Artifacts */}
-              <div className="space-y-6">
-                <h2 className="text-lg font-semibold text-slate-700">Artifacts</h2>
-                
-                {artifacts.length === 0 ? (
-                  <GlassCard className="text-center py-8 text-slate-500">
-                    <FileText className="mx-auto mb-2 opacity-50" />
-                    <p>No artifacts yet</p>
+                      <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">
+                        {new Date(art.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    <h4 className="font-bold text-slate-800 capitalize">{art.stepName}'s {art.type}</h4>
+                    <p className="text-xs text-slate-500 mt-1 line-clamp-1">{JSON.stringify(art.contentJson)}</p>
                   </GlassCard>
-                ) : (
-                  <div className="space-y-4">
-                    {artifacts.map((artifact) => (
-                      <GlassCard key={artifact.id} className="p-4" hover>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                            <span>{artifact.type.replace('_', ' ')}</span>
-                          </span>
-                          <span className="text-xs text-slate-400">
-                            <span>{new Date(artifact.createdAt).toLocaleTimeString()}</span>
-                          </span>
-                        </div>
-                        <div className="text-sm text-slate-700 line-clamp-3">
-                          <span>{JSON.stringify(artifact.contentJson)}</span>
-                        </div>
-                      </GlassCard>
-                    ))}
-                  </div>
-                )}
-                
-                {/* Debug info */}
-                <div className="mt-8 pt-8 border-t border-slate-200">
-                  <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Debug Info</h3>
-                  <pre className="text-[10px] bg-slate-50 p-2 rounded border border-slate-100 overflow-auto max-h-40">
-                    {JSON.stringify({ id, state: job.state, retryCount: job.retryCount }, null, 2)}
-                  </pre>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Artifact Detail Modal */}
+        {selectedArtifact && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md">
+            <div className="bg-white w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white rounded-lg">{getArtifactIcon(selectedArtifact.type)}</div>
+                  <h3 className="font-black text-slate-900 capitalize">{selectedArtifact.stepName}'s {selectedArtifact.type}</h3>
                 </div>
+                <button onClick={() => setSelectedArtifact(null)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
+                  <X size={20} className="text-slate-500" />
+                </button>
+              </div>
+              <div className="p-8 max-h-[60vh] overflow-y-auto">
+                 <pre className="text-sm text-slate-600 bg-slate-50 p-6 rounded-2xl overflow-x-auto whitespace-pre-wrap font-mono">
+                   {JSON.stringify(selectedArtifact.contentJson, null, 2)}
+                 </pre>
+              </div>
+              <div className="p-6 border-t border-slate-100 flex justify-end">
+                <Button variant="secondary" onClick={() => setSelectedArtifact(null)}>Close Viewer</Button>
               </div>
             </div>
           </div>
+        )}
+
+        {activeAgentLog && (
+          <ActivityLog 
+            agentName={activeAgentLog}
+            jobId={id}
+            isOpen={!!activeAgentLog}
+            onClose={() => setActiveAgentLog(null)}
+            status={steps.find(s => s.stepName === activeAgentLog)?.state || 'WAITING'}
+          />
         )}
       </main>
     </ClientOnly>

@@ -74,7 +74,8 @@ interface AgentBannerProps {
 }
 
 export function AgentBanner({ agent, status = 'WAITING', onClick, compact = false }: AgentBannerProps) {
-  const info = agentInfoMap[agent];
+  // Fallback to jessica if agent name is unknown to prevent crash
+  const info = agentInfoMap[agent] || agentInfoMap['jessica'];
   const Icon = info.icon;
 
   return (

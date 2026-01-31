@@ -40,7 +40,8 @@ const statusConfig: Record<StepState, {
 };
 
 export function StatusBadge({ status, size = 'md', showLabel = true }: StatusBadgeProps) {
-  const config = statusConfig[status];
+  // Defensive logic: fallback to WAITING if status is unknown or missing
+  const config = statusConfig[status] || statusConfig['WAITING'];
   const Icon = config.icon;
   const iconSize = size === 'sm' ? 12 : 14;
 

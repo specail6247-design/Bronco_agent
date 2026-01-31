@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getYouTubeOAuthClient, YOUTUBE_SCOPES } from '@/lib/auth/youtube';
 

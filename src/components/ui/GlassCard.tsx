@@ -1,12 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ReactNode } from 'react';
+import { ComponentProps, ReactNode } from 'react';
 
-interface GlassCardProps {
+interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
-  className?: string;
-  onClick?: () => void;
   hover?: boolean;
   disableMotion?: boolean;
 }
@@ -14,10 +12,11 @@ interface GlassCardProps {
 export function GlassCard({
   children,
   className = '',
-  onClick,
   hover = false,
   disableMotion = false,
+  ...rest
 }: GlassCardProps) {
+  const { onDrag, onDragStart, onDragEnd, ...restProps } = rest;
   const classes = `
         glass-card rounded-2xl p-6
         ${hover ? 'cursor-pointer' : ''}
@@ -26,7 +25,7 @@ export function GlassCard({
 
   if (disableMotion) {
     return (
-      <div className={classes} onClick={onClick}>
+      <div className={classes} {...rest}>
         {children}
       </div>
     );
@@ -35,7 +34,7 @@ export function GlassCard({
   return (
     <motion.div
       className={classes}
-      onClick={onClick}
+      {...(restProps as Omit<ComponentProps<typeof motion.div>, 'ref'>)}
       whileHover={hover ? { scale: 1.02, y: -4 } : undefined}
       whileTap={hover ? { scale: 0.98 } : undefined}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { bootstrapUser } from '@/lib/auth/owner-bootstrap';
 import { validateInviteKey, consumeInviteKey } from '@/lib/auth/invite-keys';

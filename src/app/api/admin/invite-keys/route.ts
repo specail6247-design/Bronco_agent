@@ -1,35 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb, adminAuth } from '@/lib/firebase/admin';
+import { getAdminDb, getAdminAuth } from '@/lib/firebase/admin';
 import { createNewInviteKey } from '@/lib/auth/invite-keys';
+import { isOwner } from '@/lib/config';
 
 export async function POST(req: NextRequest) {
   try {
+    const adminDb = getAdminDb();
+    const adminAuth = getAdminAuth();
     const body = await req.json();
     const { expiryDays, allowedAgentCount, maxUses, adminUid } = body;
     
     // Server-side role check
-    const OWNER_EMAIL = process.env.OWNER_EMAIL || 'specail6247@gmail.com';
-    console.log('[AdminAPI] Request from UID:', adminUid);
-    
     if (adminUid) {
+      const authUser = await adminAuth.getUser(adminUid).catch(() => null);
       const userSnap = await adminDb.collection('users').doc(adminUid).get();
-      let userData = userSnap.data();
-      let email = userData?.email;
+      const userData = userSnap.data();
+      const email = userData?.email || authUser?.email;
 
-      if (!userData) {
-        try {
-          const authUser = await adminAuth.getUser(adminUid);
-          email = authUser.email;
-          console.log('[AdminAPI] Auth User Email:', email);
-        } catch (e) {
-          console.error('[AdminAPI] Auth Lookup failed:', e);
-        }
-      }
-
-      const isOwner = (userData?.role === 'OWNER') || 
-                      (email && email.toLowerCase() === OWNER_EMAIL.toLowerCase());
-
-      if (!isOwner) {
+      if (!isOwner(email)) {
         console.warn('[AdminAPI] Unauthorized attempt by:', email);
         return new NextResponse('Unauthorized: OWNER role required', { status: 403 });
       }

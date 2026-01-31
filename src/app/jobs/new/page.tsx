@@ -15,6 +15,28 @@ import { GlassCard, Button, Input, Select, Textarea } from '@/components/ui';
 import { Platform } from '@/types';
 import ClientOnly from '@/components/ClientOnly';
 
+import { getCurrentUser } from '@/lib/firebase/auth';
+
+const availablePlatforms: { id: Platform; label: string }[] = [
+  { id: 'youtube', label: 'YouTube' },
+  { id: 'tiktok', label: 'TikTok' },
+  { id: 'instagram', label: 'Instagram' },
+  { id: 'threads', label: 'Threads' },
+  { id: 'reddit', label: 'Reddit' },
+  { id: 'x', label: 'X' },
+  { id: 'linkedin', label: 'LinkedIn' },
+  { id: 'facebook', label: 'Facebook' },
+];
+
+const languages = [
+  { value: 'en', label: 'English' },
+  { value: 'ko', label: 'Korean' },
+  { value: 'ja', label: 'Japanese' },
+  { value: 'es', label: 'Spanish' },
+  { value: 'fr', label: 'French' },
+  { value: 'de', label: 'German' },
+];
+
 export default function NewJobPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -25,39 +47,26 @@ export default function NewJobPage() {
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
 
-  const availablePlatforms: { id: Platform; label: string }[] = [
-    { id: 'youtube', label: 'YouTube' },
-    { id: 'tiktok', label: 'TikTok' },
-    { id: 'instagram', label: 'Instagram' },
-    { id: 'threads', label: 'Threads' },
-    { id: 'x', label: 'X (Twitter)' },
-    { id: 'linkedin', label: 'LinkedIn' }, // mapped to facebook or custom in future
-    { id: 'facebook', label: 'Facebook' },
-  ];
-
-  const languages = [
-    { value: 'en', label: 'English' },
-    { value: 'ko', label: 'Korean' },
-    { value: 'es', label: 'Spanish' },
-    { value: 'ja', label: 'Japanese' },
-    { value: 'fr', label: 'French' },
-  ];
-
   const togglePlatform = (platform: Platform) => {
-    if (platforms.includes(platform)) {
-      setPlatforms(platforms.filter(p => p !== platform));
-    } else {
-      setPlatforms([...platforms, platform]);
-    }
+    setPlatforms((prev) =>
+      prev.includes(platform)
+        ? prev.filter((p) => p !== platform)
+        : [...prev, platform]
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (platforms.length === 0) return;
     setLoading(true);
 
     try {
-      // Combine date and time
-      const scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
+      const user = getCurrentUser();
+      const [year, month, day] = scheduledDate.split('-').map(Number);
+      const [hour, minute] = scheduledTime.split(':').map(Number);
+      const dateObj = new Date(year, month - 1, day, hour, minute);
+      
+      const scheduledAt = isNaN(dateObj.getTime()) ? new Date().toISOString() : dateObj.toISOString();
 
       const res = await fetch('/api/jobs', {
         method: 'POST',
@@ -68,6 +77,7 @@ export default function NewJobPage() {
           languageMode,
           preferredLanguage: languageMode === 'manual' ? preferredLanguage : undefined,
           scheduledAt,
+          userId: user?.uid || 'user1',
         }),
       });
 
@@ -75,10 +85,13 @@ export default function NewJobPage() {
         const data = await res.json();
         router.push(`/jobs/${data.id}`);
       } else {
-        console.error('Failed to create job');
+        const errText = await res.text();
+        console.error('Failed to create job:', errText);
+        alert('Failed to schedule job. Please check your inputs.');
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error during job creation:', error);
+      alert('System error. Please try again.');
     } finally {
       setLoading(false);
     }

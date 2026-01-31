@@ -1,23 +1,70 @@
 import { AgentContext, AgentResult } from '@/types';
+import { askGemini } from '@/lib/ai/gemini';
+import { logActivity } from '@/lib/pipeline/logger';
 
-// Agent 2: Sunny (Long-form Script)
+// Agent 2: Sunny (Long-form Script & Hook Strategist)
 export async function sunny(context: AgentContext): Promise<AgentResult> {
-  const research = context.previousArtifacts.find(a => a.type === 'research');
-  if (!research) return { success: false, artifactType: 'script', content: {}, error: 'Missing research artifact' };
+  const researchArtifact = context.previousArtifacts.find(a => a.type === 'research');
+  if (!researchArtifact) {
+    return { success: false, artifactType: 'script', content: {}, error: 'Missing research artifact' };
+  }
 
-  const { topic, languageMode, preferredLanguage } = context.job;
-  const lang = languageMode === 'manual' ? preferredLanguage : 'en';
+  const { topic, languageMode, preferredLanguage, id: jobId } = context.job;
+  const research = researchArtifact.contentJson as any;
+  const lang = languageMode === 'manual' ? (preferredLanguage || 'ko') : 'en';
 
-  return {
-    success: true,
-    artifactType: 'script',
-    content: {
-      language: lang,
-      title: `The Ultimate Guide to ${topic}`,
-      hook: "Did you know that 90% of people fail at this? Today I'll show you how to fix it.",
-      body: `Main script content related to ${topic}... [2000 words]...`,
-      cta: "Don't forget to like and subscribe for more insights!",
-      estimatedDurationSeconds: 600
-    }
-  };
+  try {
+    await logActivity(jobId, 'sunny', 'THOUGHT', `Reading Jessica's research for "${topic}"`);
+    await logActivity(jobId, 'sunny', 'ACTION', `Drafting a viral script structure in ${lang}`);
+
+    const prompt = `
+      You are Sunny, a world-class YouTube scriptwriter specializing in high-retention content.
+      Based on the following research, write a viral video script in ${lang}.
+
+      Topic: ${topic}
+      Research Summary: ${research.summary}
+      Trending Keywords: ${research.keywords?.join(', ')}
+      Competitor Angles: ${research.competitorAngles?.join(', ')}
+
+      Requirements:
+      - Title: Catchy, high CTR title.
+      - Hook: Strong opening to grab attention within 3 seconds.
+      - Body: Engaging content divided into clear segments.
+      - CTA: Natural call to action.
+      - Total Length: Approximately 1000-1500 words.
+
+      Output JSON format:
+      {
+        "title": "...",
+        "hook": "...",
+        "body": "...",
+        "cta": "...",
+        "estimatedDurationSeconds": 000
+      }
+    `;
+
+    await logActivity(jobId, 'sunny', 'THOUGHT', `Optimizing the script for maximum audience retention...`);
+    const script = await askGemini(prompt, true);
+    
+    await logActivity(jobId, 'sunny', 'RESULT', `Script finalized: "${script.title}"`);
+
+    return {
+      success: true,
+      artifactType: 'script',
+      content: {
+        ...script,
+        language: lang
+      }
+    };
+
+  } catch (error: any) {
+    console.error('[Sunny] Agent Error:', error);
+    await logActivity(jobId, 'sunny', 'ERROR', `Scriptwriting failed: ${error.message}`);
+    return { 
+      success: false, 
+      artifactType: 'script', 
+      content: {}, 
+      error: `Sunny failed: ${error.message}` 
+    };
+  }
 }

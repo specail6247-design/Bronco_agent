@@ -6,6 +6,7 @@ import { rovert } from './agents/rovert';
 import { tim } from './agents/tim';
 import { david } from './agents/david';
 import { john } from './agents/john';
+import { logActivity } from './logger';
 
 // Registry of all agents
 const agents = {
@@ -30,6 +31,9 @@ export async function runPipeline(job: Job) {
   if (job.state === 'SCHEDULED') {
     await updateJob(job.id, { state: 'RUNNING' });
   }
+
+  // Log immediate startup
+  await logActivity(job.id, 'jessica', 'THOUGHT', `Pipeline engine engaged for job "${job.topic}". Jessica is beginning research.`);
 
   try {
     // Fetch existing steps and artifacts

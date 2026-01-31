@@ -1,57 +1,80 @@
-const META_APP_ID = process.env.META_APP_ID;
-const META_APP_SECRET = process.env.META_APP_SECRET;
-const NEXT_PUBLIC_APP_URL = process.env.NEXT_PUBLIC_APP_URL;
-
-const REDIRECT_URI = `${NEXT_PUBLIC_APP_URL}/api/auth/callback/meta`;
-
-export function getMetaAuthUrl(uid: string) {
-  // Scopes for Facebook, Instagram Graph API, and Threads
-  const scope = [
-    'public_profile',
-    'email',
-    'instagram_basic',
-    'instagram_content_publish',
-    'pages_show_list',
-    'pages_read_engagement',
-    'pages_manage_posts',
-    'threads_basic',
-    'threads_content_publish'
-  ].join(',');
-
-  const url = new URL('https://www.facebook.com/v18.0/dialog/oauth');
-  url.searchParams.append('client_id', META_APP_ID || '');
-  url.searchParams.append('redirect_uri', REDIRECT_URI);
-  url.searchParams.append('state', uid);
-  url.searchParams.append('scope', scope);
-  url.searchParams.append('response_type', 'code');
-
-  return url.toString();
-}
-
 export async function exchangeMetaCode(code: string) {
-  const url = new URL('https://graph.facebook.com/v18.0/oauth/access_token');
-  url.searchParams.append('client_id', META_APP_ID || '');
-  url.searchParams.append('redirect_uri', REDIRECT_URI);
-  url.searchParams.append('client_secret', META_APP_SECRET || '');
-  url.searchParams.append('code', code);
+  const client_id = process.env.META_APP_ID;
+  const client_secret = process.env.META_APP_SECRET;
+  const redirect_uri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback/meta`;
 
-  const response = await fetch(url.toString());
-  return response.json();
+  // 1. Exchange code for short-lived access token
+  const tokenUrl = `https://graph.facebook.com/v19.0/oauth/access_token?client_id=${client_id}&redirect_uri=${encodeURIComponent(redirect_uri)}&client_secret=${client_secret}&code=${code}`;
+  
+  const tokenRes = await fetch(tokenUrl);
+  const tokenData = await tokenRes.json();
+
+  if (tokenData.error) {
+    return { error: tokenData.error };
+  }
+
+  const shortToken = tokenData.access_token;
+
+  // 2. Exchange for long-lived access token (60 days)
+  const longLivedUrl = `https://graph.facebook.com/v19.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${client_id}&client_secret=${client_secret}&fb_exchange_token=${shortToken}`;
+  
+  const longRes = await fetch(longLivedUrl);
+  const longData = await longRes.json();
+
+  return longData;
 }
 
 /**
- * Threads has its own specific OAuth flow for independent accounts
+ * Fetch Instagram Business Accounts linked to the user's Facebook Pages
+ */
+export async function getInstagramAccounts(accessToken: string) {
+  try {
+    // 1. Get the user's Facebook Pages
+    const pagesUrl = `https://graph.facebook.com/v19.0/me/accounts?access_token=${accessToken}`;
+    const pagesRes = await fetch(pagesUrl);
+    const pagesData = await pagesRes.json();
+
+    if (!pagesData.data || pagesData.data.length === 0) {
+      return [];
+    }
+
+    const accounts = [];
+
+    // 2. For each page, check if there's a linked Instagram Business Account
+    for (const page of pagesData.data) {
+      const igUrl = `https://graph.facebook.com/v19.0/${page.id}?fields=instagram_business_account&access_token=${accessToken}`;
+      const igRes = await fetch(igUrl);
+      const igData = await igRes.json();
+
+      if (igData.instagram_business_account) {
+        // 3. Get detailed info about the IG account
+        const igInfoUrl = `https://graph.facebook.com/v19.0/${igData.instagram_business_account.id}?fields=id,username,name,profile_picture_url&access_token=${accessToken}`;
+        const igInfoRes = await fetch(igInfoUrl);
+        const igInfo = await igInfoRes.json();
+        
+        accounts.push({
+          ...igInfo,
+          pageId: page.id,
+          pageName: page.name
+        });
+      }
+    }
+
+    return accounts;
+  } catch (error) {
+    console.error('Error fetching Instagram accounts:', error);
+    return [];
+  }
+}
+
+/**
+ * Threads API Auth URL
+ * Note: Threads uses the same account source as Instagram
  */
 export function getThreadsAuthUrl(uid: string) {
-  const scope = 'threads_basic,threads_content_publish';
-  const redirectUri = `${NEXT_PUBLIC_APP_URL}/api/auth/callback/threads`;
-  
-  const url = new URL('https://www.threads.net/oauth/authorize');
-  url.searchParams.append('client_id', META_APP_ID || ''); // Often same as Meta App ID
-  url.searchParams.append('redirect_uri', redirectUri);
-  url.searchParams.append('scope', scope);
-  url.searchParams.append('state', uid);
-  url.searchParams.append('response_type', 'code');
+  const client_id = process.env.META_APP_ID;
+  const redirect_uri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback/meta`;
+  const scopes = ['public_profile', 'instagram_basic', 'pages_show_list'].join(',');
 
-  return url.toString();
+  return `https://www.facebook.com/v19.0/dialog/oauth?client_id=${client_id}&redirect_uri=${encodeURIComponent(redirect_uri)}&state=${uid}&scope=${encodeURIComponent(scopes)}&response_type=code`;
 }

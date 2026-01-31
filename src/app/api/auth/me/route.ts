@@ -1,51 +1,46 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb, adminAuth } from '@/lib/firebase/admin';
+import { getAdminDb, getAdminAuth } from '@/lib/firebase/admin';
+import { isOwner, CONFIG } from '@/lib/config';
 
 export async function GET(req: NextRequest) {
   try {
+    const adminDb = getAdminDb();
+    const adminAuth = getAdminAuth();
     const { searchParams } = new URL(req.url);
     const uid = searchParams.get('uid');
 
     if (!uid) {
       return new NextResponse('Missing UID', { status: 400 });
     }
-
-    const OWNER_EMAIL = process.env.OWNER_EMAIL;
+    
     let userData: any = null;
     let email: string | undefined = undefined;
 
     const userDoc = await adminDb.collection('users').doc(uid).get();
+    const authUser = await adminAuth.getUser(uid).catch(() => null);
     
     if (userDoc.exists) {
       userData = userDoc.data();
-      email = userData?.email;
+      email = userData?.email || authUser?.email;
     } else {
-      // If Firestore doc is missing, check Firebase Auth directly
-      try {
-        const authUser = await adminAuth.getUser(uid);
-        email = authUser.email;
-        userData = {
-          email: authUser.email,
-          name: authUser.displayName,
-          role: 'MEMBER', // Default, will be upgraded below if needed
-          allowedAgents: ['jessica', 'sunny'],
-          createdAt: new Date(),
-        };
-      } catch (authError) {
-        console.error('Auth user not found:', authError);
-        return new NextResponse('User not found', { status: 404 });
-      }
+      // If Firestore doc is missing, use Auth data
+      email = authUser?.email;
+      userData = {
+        email: authUser?.email,
+        name: authUser?.displayName,
+        role: 'MEMBER',
+        allowedAgents: CONFIG.DEFAULT_AGENTS,
+        createdAt: new Date(),
+      };
     }
     
-    let role = userData?.role || 'MEMBER';
-    if (OWNER_EMAIL && email && email.toLowerCase() === OWNER_EMAIL.toLowerCase()) {
-      role = 'OWNER';
-    }
+    const role = isOwner(email) ? 'OWNER' : (userData?.role || 'MEMBER');
 
     // Ensure OWNER always has all agents
     const allowedAgents = role === 'OWNER' 
-      ? ['jessica', 'sunny', 'rovert', 'tim', 'david', 'john']
-      : (userData?.allowedAgents || ['jessica', 'sunny']);
+      ? CONFIG.FULL_WORKFORCE
+      : (userData?.allowedAgents || CONFIG.DEFAULT_AGENTS);
 
     // 연동 정보 가져오기 (YouTube 등)
     const connectionsSnap = await adminDb.collection('users').doc(uid).collection('connections').get();
@@ -57,6 +52,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       user: { 
         id: uid, 
+        email: email,
+        name: userData?.name || authUser?.displayName || email?.split('@')[0],
         ...userData,
         role,
         allowedAgents,

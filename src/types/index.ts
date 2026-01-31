@@ -65,6 +65,8 @@ export interface User {
       connected: boolean;
       email?: string;
       channelName?: string;
+      thumbnail?: string;
+      subscriberCount?: string;
       updatedAt: any;
     }
   };

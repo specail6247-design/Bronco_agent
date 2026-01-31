@@ -14,7 +14,7 @@ import {
   DocumentReference,
   CollectionReference
 } from 'firebase/firestore';
-import { db } from './config';
+import { getFirebaseDb } from './config';
 import type { 
   User, 
   InviteKey, 
@@ -26,15 +26,17 @@ import type {
   AuditEvent 
 } from '@/types';
 
-// Collection references
-export const usersCollection = collection(db, 'users') as CollectionReference<User>;
-export const inviteKeysCollection = collection(db, 'invite_keys') as CollectionReference<InviteKey>;
-export const jobsCollection = collection(db, 'jobs') as CollectionReference<Job>;
-export const jobStepsCollection = collection(db, 'job_steps') as CollectionReference<JobStep>;
-export const artifactsCollection = collection(db, 'artifacts') as CollectionReference<Artifact>;
-export const platformPostsCollection = collection(db, 'platform_posts') as CollectionReference<PlatformPost>;
-export const metricsSnapshotsCollection = collection(db, 'metrics_snapshots') as CollectionReference<MetricsSnapshot>;
-export const auditEventsCollection = collection(db, 'audit_events') as CollectionReference<AuditEvent>;
+function getDbOrThrow() {
+  const db = getFirebaseDb();
+  if (!db) {
+    throw new Error('Firestore is not initialized. Check NEXT_PUBLIC_FIREBASE_* env vars.');
+  }
+  return db;
+}
+
+function getCollection<T>(name: string): CollectionReference<T> {
+  return collection(getDbOrThrow(), name) as CollectionReference<T>;
+}
 
 // Helper to convert Firestore Timestamp to Date
 export function toDate(timestamp: Timestamp | Date | null | undefined): Date | null {
@@ -53,6 +55,7 @@ export function toTimestamp(date: Date | null | undefined): Timestamp | null {
 
 // User operations
 export async function getUserById(userId: string): Promise<User | null> {
+  const usersCollection = getCollection<User>('users');
   const docRef = doc(usersCollection, userId);
   const docSnap = await getDoc(docRef);
   if (!docSnap.exists()) return null;
@@ -60,6 +63,7 @@ export async function getUserById(userId: string): Promise<User | null> {
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
+  const usersCollection = getCollection<User>('users');
   const q = query(usersCollection, where('email', '==', email), limit(1));
   const snapshot = await getDocs(q);
   if (snapshot.empty) return null;
@@ -68,6 +72,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 }
 
 export async function createUser(userId: string, userData: Omit<User, 'id'>): Promise<void> {
+  const usersCollection = getCollection<User>('users');
   const docRef = doc(usersCollection, userId);
   await setDoc(docRef, {
     ...userData,
@@ -76,16 +81,19 @@ export async function createUser(userId: string, userData: Omit<User, 'id'>): Pr
 }
 
 export async function updateUser(userId: string, updates: Partial<User>): Promise<void> {
+  const usersCollection = getCollection<User>('users');
   const docRef = doc(usersCollection, userId);
   await updateDoc(docRef, updates as Record<string, unknown>);
 }
 
 export async function getUsersCount(): Promise<number> {
+  const usersCollection = getCollection<User>('users');
   const snapshot = await getDocs(usersCollection);
   return snapshot.size;
 }
 
 export async function getAllUsers(): Promise<User[]> {
+  const usersCollection = getCollection<User>('users');
   const q = query(usersCollection, orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as User));
@@ -93,6 +101,7 @@ export async function getAllUsers(): Promise<User[]> {
 
 // InviteKey operations
 export async function getInviteKeyByHash(keyHash: string): Promise<InviteKey | null> {
+  const inviteKeysCollection = getCollection<InviteKey>('invite_keys');
   const q = query(inviteKeysCollection, where('keyHash', '==', keyHash), limit(1));
   const snapshot = await getDocs(q);
   if (snapshot.empty) return null;
@@ -101,6 +110,7 @@ export async function getInviteKeyByHash(keyHash: string): Promise<InviteKey | n
 }
 
 export async function createInviteKey(keyData: Omit<InviteKey, 'id'>): Promise<string> {
+  const inviteKeysCollection = getCollection<InviteKey>('invite_keys');
   const docRef = doc(inviteKeysCollection);
   await setDoc(docRef, {
     ...keyData,
@@ -110,12 +120,14 @@ export async function createInviteKey(keyData: Omit<InviteKey, 'id'>): Promise<s
 }
 
 export async function updateInviteKey(keyId: string, updates: Partial<InviteKey>): Promise<void> {
+  const inviteKeysCollection = getCollection<InviteKey>('invite_keys');
   const docRef = doc(inviteKeysCollection, keyId);
   await updateDoc(docRef, updates as Record<string, unknown>);
 }
 
 // Job operations
 export async function getJobById(jobId: string): Promise<Job | null> {
+  const jobsCollection = getCollection<Job>('jobs');
   const docRef = doc(jobsCollection, jobId);
   const docSnap = await getDoc(docRef);
   if (!docSnap.exists()) return null;
@@ -123,6 +135,7 @@ export async function getJobById(jobId: string): Promise<Job | null> {
 }
 
 export async function createJob(jobData: Omit<Job, 'id'>): Promise<string> {
+  const jobsCollection = getCollection<Job>('jobs');
   const docRef = doc(jobsCollection);
   await setDoc(docRef, {
     ...jobData,
@@ -133,6 +146,7 @@ export async function createJob(jobData: Omit<Job, 'id'>): Promise<string> {
 }
 
 export async function updateJob(jobId: string, updates: Partial<Job>): Promise<void> {
+  const jobsCollection = getCollection<Job>('jobs');
   const docRef = doc(jobsCollection, jobId);
   await updateDoc(docRef, {
     ...updates,
@@ -141,15 +155,24 @@ export async function updateJob(jobId: string, updates: Partial<Job>): Promise<v
 }
 
 export async function getJobsByOwner(ownerId: string): Promise<Job[]> {
-  const q = query(jobsCollection, where('ownerId', '==', ownerId), orderBy('createdAt', 'desc'));
+  const jobsCollection = getCollection<Job>('jobs');
+  const q = query(jobsCollection, where('ownerId', '==', ownerId));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Job));
+  const jobs = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Job));
+  return jobs.sort((a, b) => {
+    const aDate = toDate(a.createdAt as any);
+    const bDate = toDate(b.createdAt as any);
+    const aTime = aDate ? aDate.getTime() : 0;
+    const bTime = bDate ? bDate.getTime() : 0;
+    return bTime - aTime;
+  });
 }
 
 export async function getScheduledJobs(): Promise<Job[]> {
   const now = Timestamp.now();
+  const jobsCollection = getCollection<Job>('jobs');
   const q = query(
-    jobsCollection, 
+    jobsCollection,
     where('state', '==', 'SCHEDULED'),
     where('scheduledAt', '<=', now),
     orderBy('scheduledAt', 'asc')
@@ -160,30 +183,42 @@ export async function getScheduledJobs(): Promise<Job[]> {
 
 // JobStep operations
 export async function getJobSteps(jobId: string): Promise<JobStep[]> {
+  const jobStepsCollection = getCollection<JobStep>('job_steps');
   const q = query(jobStepsCollection, where('jobId', '==', jobId));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as JobStep));
 }
 
 export async function createJobStep(stepData: Omit<JobStep, 'id'>): Promise<string> {
+  const jobStepsCollection = getCollection<JobStep>('job_steps');
   const docRef = doc(jobStepsCollection);
   await setDoc(docRef, stepData as any);
   return docRef.id;
 }
 
 export async function updateJobStep(stepId: string, updates: Partial<JobStep>): Promise<void> {
+  const jobStepsCollection = getCollection<JobStep>('job_steps');
   const docRef = doc(jobStepsCollection, stepId);
   await updateDoc(docRef, updates as Record<string, unknown>);
 }
 
 // Artifact operations
 export async function getArtifactsByJob(jobId: string): Promise<Artifact[]> {
-  const q = query(artifactsCollection, where('jobId', '==', jobId), orderBy('createdAt', 'asc'));
+  const artifactsCollection = getCollection<Artifact>('artifacts');
+  const q = query(artifactsCollection, where('jobId', '==', jobId));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Artifact));
+  const artifacts = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Artifact));
+  return artifacts.sort((a, b) => {
+    const aDate = toDate(a.createdAt as any);
+    const bDate = toDate(b.createdAt as any);
+    const aTime = aDate ? aDate.getTime() : 0;
+    const bTime = bDate ? bDate.getTime() : 0;
+    return aTime - bTime;
+  });
 }
 
 export async function createArtifact(artifactData: Omit<Artifact, 'id'>): Promise<string> {
+  const artifactsCollection = getCollection<Artifact>('artifacts');
   const docRef = doc(artifactsCollection);
   await setDoc(docRef, {
     ...artifactData,
@@ -194,6 +229,7 @@ export async function createArtifact(artifactData: Omit<Artifact, 'id'>): Promis
 
 // Audit log
 export async function logAuditEvent(event: Omit<AuditEvent, 'id' | 'createdAt'>): Promise<void> {
+  const auditEventsCollection = getCollection<AuditEvent>('audit_events');
   const docRef = doc(auditEventsCollection);
   await setDoc(docRef, {
     ...event,

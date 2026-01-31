@@ -1,0 +1,29 @@
+  ▲ Next.js 14.2.35
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+N [FirebaseError]: Firebase: Error (auth/invalid-api-key).
+    at I (/Users/kimtaejune/Antigravity-World/Bronco _Agent/.next/server/chunks/6644.js:36:153613)
+    at m (/Users/kimtaejune/Antigravity-World/Bronco _Agent/.next/server/chunks/6644.js:36:153661)
+    at n.instanceFactory (/Users/kimtaejune/Antigravity-World/Bronco _Agent/.next/server/chunks/6644.js:36:205682)
+    at o.getOrInitializeService (/Users/kimtaejune/Antigravity-World/Bronco _Agent/.next/server/chunks/6644.js:36:139582)
+    at o.initialize (/Users/kimtaejune/Antigravity-World/Bronco _Agent/.next/server/chunks/6644.js:36:138957)
+    at ex (/Users/kimtaejune/Antigravity-World/Bronco _Agent/.next/server/chunks/6644.js:36:190263)
+    at tB (/Users/kimtaejune/Antigravity-World/Bronco _Agent/.next/server/chunks/6644.js:36:206351)
+    at 17157 (/Users/kimtaejune/Antigravity-World/Bronco _Agent/.next/server/app/api/auth/signup/route.js:1:6559)
+    at t (/Users/kimtaejune/Antigravity-World/Bronco _Agent/.next/server/webpack-runtime.js:1:128)
+    at 19782 (/Users/kimtaejune/Antigravity-World/Bronco _Agent/.next/server/app/api/auth/signup/route.js:1:5087) {
+  code: 'auth/invalid-api-key',
+  customData: { appName: '[DEFAULT]' }
+}
+
+> Build error occurred
+Error: Failed to collect page data for /api/auth/signup
+    at /Users/kimtaejune/Antigravity-World/Bronco _Agent/node_modules/next/dist/build/utils.js:1269:15
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  type: 'Error'
+}

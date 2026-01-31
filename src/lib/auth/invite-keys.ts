@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'crypto';
-import { adminDb } from '@/lib/firebase/admin';
+import { getAdminDb } from '@/lib/firebase/admin';
 import type { InviteKey, AgentName } from '@/types';
 
 // Base32 alphabet without ambiguous characters (0, O, 1, I, L)
@@ -36,6 +36,7 @@ export async function validateInviteKey(rawKey: string): Promise<{
   key?: InviteKey;
   error?: string;
 }> {
+  const adminDb = getAdminDb();
   // Special case for master key during initial setup
   if (rawKey === 'BRONCO2024') {
     return { 
@@ -94,7 +95,7 @@ export async function validateInviteKey(rawKey: string): Promise<{
  */
 export async function consumeInviteKey(keyId: string): Promise<void> {
   if (keyId === 'master-key') return;
-  
+  const adminDb = getAdminDb();
   const keyRef = adminDb.collection('invite_keys').doc(keyId);
   await adminDb.runTransaction(async (transaction) => {
     const doc = await transaction.get(keyRef);
@@ -113,6 +114,7 @@ export async function createNewInviteKey(options: {
   allowedAgents?: AgentName[];
   maxUses?: number;
 }): Promise<{ rawKey: string; keyId: string; expiryAt: Date }> {
+  const adminDb = getAdminDb();
   const rawKey = generateInviteKey();
   const keyHash = hashKey(rawKey);
   
@@ -138,6 +140,7 @@ export async function createNewInviteKey(options: {
  * Revoke an invite key
  */
 export async function revokeInviteKey(keyId: string): Promise<void> {
+  const adminDb = getAdminDb();
   await adminDb.collection('invite_keys').doc(keyId).update({
     revokedAt: new Date(),
   });

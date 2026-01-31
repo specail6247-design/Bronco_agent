@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getTikTokAuthUrl, generateCodeVerifier, generateCodeChallenge } from '@/lib/auth/tiktok';
 import { cookies } from 'next/headers';

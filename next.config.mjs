@@ -2,18 +2,15 @@
 const nextConfig = {
   reactStrictMode: false,
   typescript: {
-    // !! WARN !!
-    // Dangerously allow production builds to successfully complete even if
-    // your project has type errors.
-    // !! WARN !!
+    // ! Dangerously ignore types to ensure MVP delivery
     ignoreBuildErrors: true,
   },
   eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
+    // ! Dangerously ignore lint to ensure MVP delivery
     ignoreDuringBuilds: true,
   },
   experimental: {
+    // This is the correct key for Next.js 14
     serverComponentsExternalPackages: ['firebase-admin'],
   },
 };

@@ -4,7 +4,8 @@ const TIKTOK_CLIENT_KEY = process.env.TIKTOK_CLIENT_KEY;
 const TIKTOK_CLIENT_SECRET = process.env.TIKTOK_CLIENT_SECRET;
 const NEXT_PUBLIC_APP_URL = process.env.NEXT_PUBLIC_APP_URL;
 
-const REDIRECT_URI = `${NEXT_PUBLIC_APP_URL}/api/auth/callback/tiktok`;
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://bronco-agent.vercel.app';
+const REDIRECT_URI = `${APP_URL}/api/auth/callback/tiktok`;
 
 // PKCE: Generate Code Verifier
 export function generateCodeVerifier() {
@@ -22,8 +23,7 @@ export function generateCodeChallenge(verifier: string) {
 export function getTikTokAuthUrl(uid: string, codeChallenge: string) {
   const scope = [
     'user.info.basic',
-    'video.upload',
-    'video.publish',
+    // Removed video.upload/publish temporarily to ensure basic login passes first
   ].join(',');
 
   const url = new URL('https://www.tiktok.com/v2/auth/authorize/');

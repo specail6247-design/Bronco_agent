@@ -1,10 +1,12 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { exchangeTikTokCode } from '@/lib/auth/tiktok';
-import { adminDb } from '@/lib/firebase/admin';
+import { getAdminDb } from '@/lib/firebase/admin';
 import { cookies } from 'next/headers';
 
 export async function GET(req: NextRequest) {
   try {
+    const adminDb = getAdminDb();
     const { searchParams } = new URL(req.url);
     const code = searchParams.get('code');
     const uid = searchParams.get('state');

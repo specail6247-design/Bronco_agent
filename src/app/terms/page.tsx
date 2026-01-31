@@ -2,60 +2,51 @@
 
 import { ChevronLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { Button, GlassCard } from '@/components/ui';
-import ClientOnly from '@/components/ClientOnly';
+import { Button } from '@/components/ui';
 
 export default function TermsPage() {
   const router = useRouter();
 
   return (
-    <ClientOnly>
-      <main className="min-h-screen p-6 bg-slate-50">
-        <div className="max-w-3xl mx-auto">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            icon={<ChevronLeft size={18} />}
-            onClick={() => router.back()}
-            className="mb-6"
-          >
-            <span>Back</span>
-          </Button>
+    <main className="min-h-screen bg-slate-50 py-20 px-6 font-primary">
+      <div className="max-w-3xl mx-auto bg-white rounded-3xl shadow-xl border border-slate-100 p-10 md:p-16">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => router.back()} 
+          className="mb-8 -ml-4"
+        >
+          <ChevronLeft size={20} className="mr-2" /> Back
+        </Button>
 
-          <GlassCard className="p-8 md:p-12">
-            <h1 className="text-3xl font-bold text-slate-900 mb-8">Terms of Service</h1>
-            
-            <div className="prose prose-slate max-w-none space-y-6 text-slate-600">
-              <section>
-                <h2 className="text-xl font-semibold text-slate-800 mb-3">1. Acceptance of Terms</h2>
-                <p>Welcome to Bronco Agent. By accessing our website and using our automated content distribution services, you agree to be bound by these Terms of Service.</p>
-              </section>
+        <h1 className="text-4xl font-black text-slate-900 mb-8">Terms of Service</h1>
+        
+        <div className="space-y-8 text-slate-600 leading-relaxed">
+          <section>
+            <h2 className="text-xl font-bold text-slate-800 mb-4">1. Acceptance of Terms</h2>
+            <p>By accessing and using Bronco Agent (the "Service"), you agree to be bound by these Terms of Service. If you do not agree, please do not use the Service.</p>
+          </section>
 
-              <section>
-                <h2 className="text-xl font-semibold text-slate-800 mb-3">2. Service Description</h2>
-                <p>Bronco Agent provides AI-driven content creation and automated distribution tools for social media platforms including TikTok. We facilitate video uploads and publishing on behalf of the user via official APIs.</p>
-              </section>
+          <section>
+            <h2 className="text-xl font-bold text-slate-800 mb-4">2. Description of Service</h2>
+            <p>Bronco Agent provides AI-driven content automation tools for social media platforms including YouTube, TikTok, and Meta. We act as an intermediary agent to help you manage your digital presence.</p>
+          </section>
 
-              <section>
-                <h2 className="text-xl font-semibold text-slate-800 mb-3">3. User Responsibilities</h2>
-                <p>You are responsible for the content uploaded through our service. You must comply with TikTok's Community Guidelines and ensure you have the necessary rights to the content you publish.</p>
-              </section>
+          <section>
+            <h2 className="text-xl font-bold text-slate-800 mb-4">3. User Responsibilities</h2>
+            <p>You are responsible for the content you generate and publish through our agents. You must comply with the community guidelines and terms of the respective third-party platforms (TikTok, YouTube, etc.).</p>
+          </section>
 
-              <section>
-                <h2 className="text-xl font-semibold text-slate-800 mb-3">4. Intellectual Property</h2>
-                <p>You retain all ownership rights to your content. Bronco Agent retains all rights to its software, branding, and proprietary algorithms.</p>
-              </section>
+          <section>
+            <h2 className="text-xl font-bold text-slate-800 mb-4">4. Limitation of Liability</h2>
+            <p>Bronco Agent is provided "as is". We are not liable for any actions taken by third-party platforms regarding your account or content.</p>
+          </section>
 
-              <section>
-                <h2 className="text-xl font-semibold text-slate-800 mb-3">5. Disclaimer</h2>
-                <p>The service is provided "as is". We do not guarantee that the automated distribution will result in specific engagement metrics or that the service will be uninterrupted.</p>
-              </section>
-
-              <p className="text-sm text-slate-400 mt-12">Last Updated: January 29, 2026</p>
-            </div>
-          </GlassCard>
+          <footer className="pt-12 border-t border-slate-100 text-sm text-slate-400">
+            Last Updated: January 30, 2026
+          </footer>
         </div>
-      </main>
-    </ClientOnly>
+      </div>
+    </main>
   );
 }

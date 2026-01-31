@@ -1,36 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb, adminAuth } from '@/lib/firebase/admin';
+import { getAdminDb, getAdminAuth } from '@/lib/firebase/admin';
+import { isOwner } from '@/lib/config';
 
 export async function GET(req: NextRequest) {
   try {
+    const adminDb = getAdminDb();
+    const adminAuth = getAdminAuth();
     const { searchParams } = new URL(req.url);
     const adminUid = searchParams.get('adminUid');
 
     if (!adminUid) return new NextResponse('Missing admin UID', { status: 401 });
 
-    const OWNER_EMAIL = process.env.OWNER_EMAIL;
+    const authUser = await adminAuth.getUser(adminUid).catch(() => null);
     const adminSnap = await adminDb.collection('users').doc(adminUid).get();
-    let adminData = adminSnap.data();
-    let email = adminData?.email;
+    const adminData = adminSnap.data();
+    const email = adminData?.email || authUser?.email;
 
-    if (!adminData) {
-      try {
-        const authUser = await adminAuth.getUser(adminUid);
-        email = authUser.email;
-      } catch (e) {
-        return new NextResponse('Admin user not found', { status: 401 });
-      }
-    }
-
-    const isOwner = (adminData?.role === 'OWNER') || 
-                    (OWNER_EMAIL && email && email.toLowerCase() === OWNER_EMAIL.toLowerCase());
-
-    if (!isOwner) {
-      return new NextResponse('Unauthorized', { status: 403 });
+    if (!isOwner(email)) {
+      return new NextResponse('Unauthorized: OWNER role required', { status: 403 });
     }
     
-    const usersSnap = await adminDb.collection('users').orderBy('createdAt', 'desc').limit(100).get();
-    const users = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Removed orderBy to prevent production build failure without manual indexing
+    const usersSnap = await adminDb.collection('users').limit(100).get();
+    const users = usersSnap.docs.map((doc: any) => {
+      const data = doc.data();
+      return { 
+        id: doc.id, 
+        ...data,
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : (data.createdAt || new Date().toISOString())
+      };
+    });
     
     return NextResponse.json({ users });
   } catch (error) {
@@ -41,31 +40,21 @@ export async function GET(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    const adminDb = getAdminDb();
+    const adminAuth = getAdminAuth();
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
     const adminUid = searchParams.get('adminUid');
     
     if (!adminUid) return new NextResponse('Missing admin UID', { status: 401 });
 
-    const OWNER_EMAIL = process.env.OWNER_EMAIL;
+    const authUser = await adminAuth.getUser(adminUid).catch(() => null);
     const adminSnap = await adminDb.collection('users').doc(adminUid).get();
-    let adminData = adminSnap.data();
-    let email = adminData?.email;
+    const adminData = adminSnap.data();
+    const email = adminData?.email || authUser?.email;
 
-    if (!adminData) {
-      try {
-        const authUser = await adminAuth.getUser(adminUid);
-        email = authUser.email;
-      } catch (e) {
-        return new NextResponse('Admin user not found', { status: 401 });
-      }
-    }
-
-    const isOwner = (adminData?.role === 'OWNER') || 
-                    (OWNER_EMAIL && email && email.toLowerCase() === OWNER_EMAIL.toLowerCase());
-
-    if (!isOwner) {
-      return new NextResponse('Unauthorized', { status: 403 });
+    if (!isOwner(email)) {
+      return new NextResponse('Unauthorized: OWNER role required', { status: 403 });
     }
     
     if (!id) return new NextResponse('Missing ID', { status: 400 });

@@ -1,29 +1,57 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import { getYouTubeOAuthClient } from '@/lib/auth/youtube';
-import { adminDb } from '@/lib/firebase/admin';
+import { getAdminDb } from '@/lib/firebase/admin';
 
 export async function GET(req: NextRequest) {
   try {
+    const adminDb = getAdminDb();
     const { searchParams } = new URL(req.url);
     const code = searchParams.get('code');
-    const uid = searchParams.get('state'); // login 할 때 보냈던 uid
+    const uid = searchParams.get('state');
 
     if (!code || !uid) {
       return new NextResponse('Invalid callback parameters', { status: 400 });
     }
 
     const client = getYouTubeOAuthClient();
-    
-    // 코드를 토큰으로 교환
     const { tokens } = await client.getToken(code);
     client.setCredentials(tokens);
 
-    // 구글 사용자 정보 가져오기 (어떤 채널인지 식별용)
+    // 1. Get Google User Info
     const oauth2 = google.oauth2({ version: 'v2', auth: client });
     const userInfo = await oauth2.userinfo.get();
+    const email = userInfo.data.email || '';
 
-    // Firestore에 토큰 저장 (사용자 문서 하위의 connections 컬렉션)
+    // 2. Get Real YouTube Channel Info (Snippet & Stats)
+    const youtube = google.youtube({ version: 'v3', auth: client });
+    let channelInfo = {
+      title: userInfo.data.name || 'YouTube Channel',
+      thumbnail: userInfo.data.picture || '',
+      subscriberCount: '0'
+    };
+
+    try {
+      const channelRes = await youtube.channels.list({
+        part: ['snippet', 'statistics'],
+        mine: true
+      });
+
+      if (channelRes.data.items && channelRes.data.items.length > 0) {
+        const channel = channelRes.data.items[0];
+        channelInfo = {
+          title: channel.snippet?.title || channelInfo.title,
+          thumbnail: channel.snippet?.thumbnails?.default?.url || channelInfo.thumbnail,
+          subscriberCount: channel.statistics?.subscriberCount || '0'
+        };
+      }
+    } catch (ytError) {
+      console.error('Error fetching YouTube channel specific digits:', ytError);
+      // Fallback to basic Google info
+    }
+
+    // 3. Store in Firestore connections collection
     await adminDb
       .collection('users')
       .doc(uid)
@@ -31,15 +59,30 @@ export async function GET(req: NextRequest) {
       .doc('youtube')
       .set({
         platform: 'youtube',
+        connected: true,
         accessToken: tokens.access_token,
         refreshToken: tokens.refresh_token,
         expiryDate: tokens.expiry_date,
-        email: userInfo.data.email,
-        channelName: userInfo.data.name,
+        email: email,
+        channelName: channelInfo.title,
+        thumbnail: channelInfo.thumbnail,
+        subscriberCount: channelInfo.subscriberCount,
         updatedAt: new Date(),
       }, { merge: true });
 
-    // 성공 후 대시보드로 이동
+    // 4. Update core user object for fast access (Dashboard optimization)
+    await adminDb.collection('users').doc(uid).set({
+      connections: {
+        youtube: {
+          connected: true,
+          channelName: channelInfo.title,
+          thumbnail: channelInfo.thumbnail,
+          subscriberCount: channelInfo.subscriberCount,
+          updatedAt: new Date()
+        }
+      }
+    }, { merge: true });
+
     const host = req.headers.get('host');
     const protocol = host?.includes('localhost') ? 'http' : 'https';
     return NextResponse.redirect(`${protocol}://${host}/dashboard?youtube=success`);

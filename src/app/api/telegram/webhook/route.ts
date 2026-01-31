@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { updateJob } from '@/lib/firebase/firestore';
 import { runPipeline } from '@/lib/pipeline/engine';
@@ -5,10 +6,11 @@ import { updateMessageButtons } from '@/lib/telegram/bot';
 // Note: We need to import adminDb to fetch job by ID if we use direct firestore calls, 
 // but updateJob uses client SDK which isn't ideal for API routes.
 // Let's use adminDb directly for correctness in API routes.
-import { adminDb } from '@/lib/firebase/admin';
+import { getAdminDb } from '@/lib/firebase/admin';
 
 export async function POST(req: NextRequest) {
   try {
+    const adminDb = getAdminDb();
     const update = await req.json();
 
     // Handle Callback Query (Button Clicks)
