@@ -42,12 +42,19 @@ export async function GET(req: NextRequest) {
       ? CONFIG.FULL_WORKFORCE
       : (userData?.allowedAgents || CONFIG.DEFAULT_AGENTS);
 
-    // 연동 정보 가져오기 (YouTube 등)
+    // MERGE Connections: Sub-collection + Root field
+    // Some connections might be in root 'connections' map, some in sub-collection
     const connectionsSnap = await adminDb.collection('users').doc(uid).collection('connections').get();
-    const connections = connectionsSnap.docs.reduce((acc, doc) => {
+    const subCollectionConnections = connectionsSnap.docs.reduce((acc, doc) => {
       acc[doc.id] = { connected: true, ...doc.data() };
       return acc;
     }, {} as any);
+
+    // Final Merged Connections
+    const mergedConnections = {
+      ...(userData?.connections || {}),
+      ...subCollectionConnections
+    };
 
     return NextResponse.json({
       user: { 
@@ -57,7 +64,7 @@ export async function GET(req: NextRequest) {
         ...userData,
         role,
         allowedAgents,
-        connections
+        connections: mergedConnections
       }
     });
   } catch (error) {

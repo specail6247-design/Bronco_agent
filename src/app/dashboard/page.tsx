@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, type ReactNode, type KeyboardEvent } from 'react';
+import { useState, useEffect, useMemo, type ReactNode, type KeyboardEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Plus, 
@@ -14,6 +14,8 @@ import {
   Check,
   Twitter,
   Music,
+  LogOut as Music2, // Fallback if Music2 is not found, or use Music
+  AtSign,
   LayoutGrid,
   Hash,
   Facebook,
@@ -222,7 +224,17 @@ export default function DashboardPage() {
 
   if (!mounted) return null;
 
-  const connectedCount = mounted ? Object.values(user?.connections || {}).filter(c => !!(c as any)?.connected).length : 0;
+  // Calculate connected count reliably
+  const connectedCount = useMemo(() => {
+    if (!mounted || !user) return 0;
+    const connections = user.connections || {};
+    // Check both map keys and direct properties if any
+    const connectedPlatforms = Object.keys(connections).filter(key => {
+      const conn = (connections as any)[key];
+      return conn && (conn.connected === true || conn.accessToken);
+    });
+    return connectedPlatforms.length;
+  }, [mounted, user]);
 
   async function handleSignOut() {
     await signOut();
@@ -282,61 +294,55 @@ export default function DashboardPage() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <PlatformCard 
-                    name="YouTube" 
-                    icon={<Youtube className="text-red-600" />} 
-                    connected={user?.connections?.youtube?.connected} 
-                    onClick={() => {
-                      if (user?.connections?.youtube?.connected) {
-                        alert('YouTube is already connected. Re-linking will refresh access.');
-                      }
-                      startOAuth('/api/auth/youtube/login');
-                    }}
-                  />
-                  <PlatformCard 
-                    name="TikTok" 
-                    icon={<Music className="text-black" />} 
-                    connected={user?.connections?.tiktok?.connected} 
-                    onClick={() => startOAuth('/api/auth/tiktok/login')}
-                    onDisconnect={() => handleDisconnect('tiktok')}
-                  />
-                  <PlatformCard 
-                    name="Instagram" 
-                    icon={<Instagram className="text-pink-600" />} 
-                    connected={user?.connections?.instagram?.connected} 
-                    onClick={() => startOAuth('/api/auth/meta/login')}
-                  />
-                  <PlatformCard 
-                    name="Threads" 
-                    icon={<Hash className="text-slate-800" />} 
-                    connected={user?.connections?.threads?.connected} 
-                    onClick={() => startOAuth('/api/auth/threads/login')}
-                  />
-                  <PlatformCard 
-                    name="X / Twitter" 
-                    icon={<Twitter className="text-blue-400" />} 
-                    connected={user?.connections?.x?.connected} 
-                    onClick={() => startOAuth('/api/auth/x/login')}
-                    onDisconnect={() => handleDisconnect('x')}
-                  />
-                  <PlatformCard 
-                    name="Facebook" 
-                    icon={<Facebook className="text-blue-600" />} 
-                    connected={user?.connections?.facebook?.connected} 
-                    onClick={() => startOAuth('/api/auth/meta/login')}
-                  />
-                  <PlatformCard 
-                    name="LinkedIn" 
-                    icon={<Linkedin className="text-blue-700" />} 
-                    connected={user?.connections?.linkedin?.connected} 
-                    onClick={() => startOAuth('/api/auth/linkedin/login')}
-                    onDisconnect={() => handleDisconnect('linkedin')}
-                  />
-                  <PlatformCard 
-                    name="Reddit" 
-                    icon={<MessageSquare className="text-orange-500" />} 
-                    connected={user?.connections?.reddit?.connected} 
-                    onClick={() => startOAuth('/api/auth/reddit/login')}
-                    onDisconnect={() => handleDisconnect('reddit')}
+                  name="YouTube" 
+                  icon={<Youtube className="text-red-600" />} 
+                  connected={!!(user?.connections?.youtube?.connected || (user?.connections as any)?.YouTube?.connected)} 
+                  channelName={user?.connections?.youtube?.channelName || (user?.connections as any)?.YouTube?.channelName}
+                  thumbnail={user?.connections?.youtube?.thumbnail || (user?.connections as any)?.YouTube?.thumbnail}
+                  onClick={() => startOAuth('/api/auth/youtube/login')}
+                />
+                <PlatformCard 
+                  name="TikTok" 
+                  icon={<Music2 className="text-black dark:text-white" />} 
+                  connected={!!user?.connections?.tiktok?.connected} 
+                  onClick={() => alert('Coming soon!')}
+                />
+                <PlatformCard 
+                  name="Instagram" 
+                  icon={<Instagram className="text-pink-600" />} 
+                  connected={!!user?.connections?.instagram?.connected} 
+                  onClick={() => alert('Coming soon!')}
+                />
+                <PlatformCard 
+                  name="Threads" 
+                  icon={<AtSign className="text-slate-800 dark:text-white" />} 
+                  connected={!!user?.connections?.threads?.connected} 
+                   onClick={() => alert('Coming soon!')}
+                />
+                <PlatformCard 
+                  name="X / Twitter" 
+                  icon={<Twitter className="text-blue-400" />} 
+                  connected={!!user?.connections?.x?.connected} 
+                  onClick={() => alert('Coming soon!')}
+                />
+                <PlatformCard 
+                  name="Facebook" 
+                  icon={<Facebook className="text-blue-600" />} 
+                  connected={!!user?.connections?.facebook?.connected} 
+                  onClick={() => alert('Coming soon!')}
+                />
+                <PlatformCard 
+                  name="LinkedIn" 
+                  icon={<Linkedin className="text-blue-700" />} 
+                  connected={!!user?.connections?.linkedin?.connected} 
+                  onClick={() => alert('Coming soon!')}
+                />
+                <PlatformCard 
+                  name="Reddit" 
+                  icon={<MessageSquare className="text-orange-600" />} 
+                  connected={!!user?.connections?.reddit?.connected} 
+                  onClick={() => alert('Coming soon!')}
+                  onDisconnect={() => handleDisconnect('reddit')}
                   />
                 </div>
               </section>
@@ -429,14 +435,16 @@ function PlatformCard({
   connected, 
   onClick, 
   onDisconnect,
-  thumbnail 
+  thumbnail,
+  channelName
 }: { 
   name: string, 
   icon: ReactNode, 
   connected?: boolean, 
   onClick?: () => void,
   onDisconnect?: () => void,
-  thumbnail?: string
+  thumbnail?: string,
+  channelName?: string
 }) {
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!onClick) return;
@@ -465,7 +473,7 @@ function PlatformCard({
             )}
           </div>
           <div>
-            <span className="font-bold text-slate-800 dark:text-slate-100 block">{name}</span>
+            <span className="font-bold text-slate-800 dark:text-slate-100 block">{channelName || name}</span>
             {connected && <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider">Sync Active</span>}
           </div>
         </div>
