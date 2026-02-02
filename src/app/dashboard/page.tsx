@@ -305,45 +305,45 @@ export default function DashboardPage() {
                   name="TikTok" 
                   icon={<Music2 className="text-black dark:text-white" />} 
                   connected={!!user?.connections?.tiktok?.connected} 
-                  onClick={() => alert('Coming soon!')}
+                  onClick={() => startOAuth('/api/auth/tiktok/login')}
                 />
                 <PlatformCard 
                   name="Instagram" 
                   icon={<Instagram className="text-pink-600" />} 
                   connected={!!user?.connections?.instagram?.connected} 
-                  onClick={() => alert('Coming soon!')}
+                  onClick={() => startOAuth('/api/auth/meta/login')}
                 />
                 <PlatformCard 
                   name="Threads" 
                   icon={<AtSign className="text-slate-800 dark:text-white" />} 
                   connected={!!user?.connections?.threads?.connected} 
-                   onClick={() => alert('Coming soon!')}
+                  onClick={() => startOAuth('/api/auth/threads/login')}
                 />
                 <PlatformCard 
                   name="X / Twitter" 
                   icon={<Twitter className="text-blue-400" />} 
                   connected={!!user?.connections?.x?.connected} 
-                  onClick={() => alert('Coming soon!')}
+                  onClick={() => startOAuth('/api/auth/x/login')}
                 />
                 <PlatformCard 
                   name="Facebook" 
                   icon={<Facebook className="text-blue-600" />} 
                   connected={!!user?.connections?.facebook?.connected} 
-                  onClick={() => alert('Coming soon!')}
+                  onClick={() => startOAuth('/api/auth/meta/login')}
                 />
                 <PlatformCard 
                   name="LinkedIn" 
                   icon={<Linkedin className="text-blue-700" />} 
                   connected={!!user?.connections?.linkedin?.connected} 
-                  onClick={() => alert('Coming soon!')}
+                  onClick={() => startOAuth('/api/auth/linkedin/login')}
                 />
                 <PlatformCard 
                   name="Reddit" 
                   icon={<MessageSquare className="text-orange-600" />} 
                   connected={!!user?.connections?.reddit?.connected} 
-                  onClick={() => alert('Coming soon!')}
+                  onClick={() => startOAuth('/api/auth/reddit/login')}
                   onDisconnect={() => handleDisconnect('reddit')}
-                  />
+                />
                 </div>
               </section>
 
