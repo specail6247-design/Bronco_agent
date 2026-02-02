@@ -14,7 +14,7 @@ export default function Home() {
     // Check if user is logged in, redirect accordingly
     const timer = setTimeout(() => {
       router.push('/login');
-    }, 2000);
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [router]);

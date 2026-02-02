@@ -12,6 +12,8 @@ import {
   Youtube,
   Instagram,
   Check,
+  Trash2,
+  X as XIcon,
   Twitter,
   Music,
   AtSign,
@@ -21,9 +23,14 @@ import {
   Linkedin,
   MessageSquare,
   Moon,
-  Sun,
-  Trash2
+  Sun
 } from 'lucide-react';
+
+const XLogo = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
 
 import { 
   GlassCard, 
@@ -74,11 +81,13 @@ function PlatformCard({
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-slate-50 rounded-lg group-hover:bg-amber-50 transition-transform overflow-hidden w-10 h-10 flex items-center justify-center text-slate-500">
+          <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg group-hover:bg-amber-100 dark:group-hover:bg-amber-900/40 transition-all overflow-hidden w-10 h-10 flex items-center justify-center">
             {thumbnail ? (
               <img src={thumbnail} alt={name} className="w-full h-full rounded-full object-cover shadow-sm" />
             ) : (
-              icon
+              <div className="text-slate-700 dark:text-slate-200">
+                {icon}
+              </div>
             )}
           </div>
           <div className="overflow-hidden">
@@ -399,13 +408,13 @@ export default function DashboardPage() {
                   />
                   <PlatformCard 
                     name="Threads" 
-                    icon={<AtSign className="text-slate-800 dark:text-white" />} 
+                    icon={<AtSign size={20} />} 
                     connected={!!user?.connections?.threads?.connected} 
                     onClick={() => startOAuth('/api/auth/threads/login')}
                   />
                   <PlatformCard 
-                    name="X / Twitter" 
-                    icon={<Twitter className="text-blue-400" />} 
+                    name="X" 
+                    icon={<XLogo className="w-5 h-5" />} 
                     connected={!!user?.connections?.x?.connected} 
                     onClick={() => startOAuth('/api/auth/x/login')}
                   />
