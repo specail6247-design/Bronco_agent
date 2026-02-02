@@ -8,7 +8,8 @@ const USER_AGENT = `platform:bronco-agent:v1.0.0 (by /u/${process.env.REDDIT_USE
 export async function exchangeRedditCode(code: string) {
   const client_id = process.env.REDDIT_CLIENT_ID?.trim();
   const client_secret = process.env.REDDIT_CLIENT_SECRET?.trim();
-  const redirect_uri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/reddit/callback`;
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, "");
+  const redirect_uri = `${appUrl}/api/auth/reddit/callback`;
 
   const tokenUrl = 'https://www.reddit.com/api/v1/access_token';
   

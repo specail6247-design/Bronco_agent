@@ -6,7 +6,8 @@
 export async function exchangeXCode(code: string, codeVerifier: string) {
   const client_id = process.env.X_CLIENT_ID?.trim();
   const client_secret = process.env.X_CLIENT_SECRET?.trim();
-  const redirect_uri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/x/callback`;
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, "");
+  const redirect_uri = `${appUrl}/api/auth/x/callback`;
 
   const tokenUrl = 'https://api.x.com/2/oauth2/token';
   

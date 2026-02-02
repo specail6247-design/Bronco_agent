@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
   response.cookies.set('x_code_verifier', codeVerifier, { 
     path: '/', 
     httpOnly: true, 
-    secure: true, 
+    secure: process.env.NODE_ENV === 'production', 
     sameSite: 'lax',
     maxAge: 600 // 10 minutes
   });

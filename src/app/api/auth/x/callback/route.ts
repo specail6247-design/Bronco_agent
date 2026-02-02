@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
         x: { 
           connected: true, 
           updatedAt: new Date(),
-          name: profile.username 
+          name: profile?.username || 'Social User' 
         }
       }
     }, { merge: true });

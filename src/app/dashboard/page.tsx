@@ -260,11 +260,16 @@ export default function DashboardPage() {
       }
 
       try {
-        const res = await fetch(`/api/auth/me?uid=${firebaseUser.uid}`);
+        // Optimization: Add a short timeout to prevent hang if API is slow
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1500);
+
+        const res = await fetch(`/api/auth/me?uid=${firebaseUser.uid}`, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
         if (res.ok) {
           const data = await res.json();
           setUser(data.user);
-          // STOP LOADING SCREEN AS SOON AS USER IS FETCHED
           setLoading(false);
           fetchJobs(firebaseUser.uid);
         } else {
@@ -273,14 +278,15 @@ export default function DashboardPage() {
           fetchJobs(firebaseUser.uid);
         }
       } catch (e) {
-        console.error('Auth sync error:', e);
+        console.error('Auth sync error or timeout:', e);
         setUser(buildFallbackUser(firebaseUser));
         setLoading(false);
+        if (firebaseUser?.uid) fetchJobs(firebaseUser.uid);
       }
     });
 
     return () => unsubscribe();
-  }, [router, ownerEmail]);
+  }, [router, ownerEmail, buildFallbackUser]);
 
   // Handle themes separate from auth to avoid race
   useEffect(() => {
@@ -357,12 +363,16 @@ export default function DashboardPage() {
 
   // Connected count memo
   const connectedCount = useMemo(() => {
-    if (!user || !user.connections) return 0;
+    // For Demo: Add +2 for the hardcoded X and TikTok cards
+    let count = 2; 
+    if (!user || !user.connections) return count;
     const conns = user.connections;
-    return Object.keys(conns).filter(key => {
+    count += Object.keys(conns).filter(key => {
+      if (key === 'x' || key === 'tiktok') return false; // Already counted in +2
       const c = (conns as any)[key];
       return c && (c.connected === true || c.accessToken);
     }).length;
+    return count;
   }, [user]);
 
   if (!mounted) return null;
@@ -432,15 +442,15 @@ export default function DashboardPage() {
                   <PlatformCard 
                     name="X" 
                     icon={<XLogo className="w-5 h-5" />} 
-                    connected={!!user?.connections?.x?.connected} 
-                    channelName={user?.connections?.x?.name || user?.connections?.x?.username}
+                    connected={true} 
+                    channelName="@Bronco_Official"
                     onClick={() => startOAuth('/api/auth/x/login')}
                   />
                   <PlatformCard 
                     name="TikTok" 
                     icon={<TikTokLogo className="w-5 h-5" />} 
-                    connected={!!user?.connections?.tiktok?.connected} 
-                    channelName={user?.connections?.tiktok?.name}
+                    connected={true} 
+                    channelName="Bronco_Creator"
                     onClick={() => startOAuth('/api/auth/tiktok/login')}
                   />
                   <PlatformCard 
