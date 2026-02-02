@@ -204,7 +204,14 @@ export function ActivityLog({ agentName, jobId, isOpen, onClose, status }: Activ
                               {item.type}
                             </span>
                             <span className="text-[10px] text-slate-300 font-mono">
-                              {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                              {(() => {
+                                try {
+                                  const d = new Date(item.timestamp);
+                                  return isNaN(d.getTime()) ? 'Recent' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                                } catch (e) {
+                                  return 'Recent';
+                                }
+                              })()}
                             </span>
                           </div>
                           <div className="text-sm font-medium leading-relaxed">

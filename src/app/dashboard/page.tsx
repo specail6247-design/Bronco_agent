@@ -25,7 +25,6 @@ import {
   Trash2
 } from 'lucide-react';
 
-const Music2 = Music; // Define a fallback or use another icon
 import { 
   GlassCard, 
   LabelCard, 
@@ -38,6 +37,91 @@ import type { Job, User, AgentName, StepState } from '@/types';
 import ClientOnly from '@/components/ClientOnly';
 import { CONFIG } from '@/lib/config';
 
+// Sub-components
+function PlatformCard({ 
+  name, 
+  icon, 
+  connected = false, 
+  onClick, 
+  onDisconnect,
+  thumbnail,
+  channelName
+}: { 
+  name: string, 
+  icon: ReactNode, 
+  connected?: boolean, 
+  onClick?: () => void,
+  onDisconnect?: () => void,
+  thumbnail?: string,
+  channelName?: string
+}) {
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!onClick) return;
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onClick();
+    }
+  };
+
+  return (
+    <GlassCard 
+      className={`p-5 border border-slate-100 dark:border-slate-800 hover:border-amber-300 dark:hover:border-amber-400 transition-all group bg-white dark:bg-slate-900 shadow-sm hover:shadow-md hover:-translate-y-1 ${onClick ? 'cursor-pointer' : ''}`} 
+      onClick={onClick}
+      hover
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={handleKeyDown}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-slate-50 rounded-lg group-hover:bg-amber-50 transition-transform overflow-hidden w-10 h-10 flex items-center justify-center text-slate-500">
+            {thumbnail ? (
+              <img src={thumbnail} alt={name} className="w-full h-full rounded-full object-cover shadow-sm" />
+            ) : (
+              icon
+            )}
+          </div>
+          <div className="overflow-hidden">
+            <span className="font-bold text-slate-800 dark:text-slate-100 block truncate">{channelName || name}</span>
+            {connected && <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider">Sync Active</span>}
+          </div>
+        </div>
+        {connected && (
+          <div className="p-1 bg-emerald-50 rounded-full">
+            <Check size={14} className="text-emerald-500" />
+          </div>
+        )}
+      </div>
+      <div className="flex gap-2">
+        <Button 
+          variant={connected ? "ghost" : "secondary"} 
+          size="sm" 
+          className={`flex-1 text-[10px] font-black uppercase tracking-widest ${connected ? 'text-slate-400' : 'bg-slate-900 text-white shadow-lg'}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onClick?.();
+          }}
+        >
+          {connected ? "Manage" : "Connect Now"}
+        </Button>
+        {connected && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 hover:bg-red-50"
+            onClick={(event) => {
+              event.stopPropagation();
+              onDisconnect?.();
+            }}
+          >
+            Disconnect
+          </Button>
+        )}
+      </div>
+    </GlassCard>
+  );
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -45,7 +129,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const ownerEmail = CONFIG.OWNER_EMAILS[0]; // Get from config defense
+  const ownerEmail = CONFIG.OWNER_EMAILS[0];
   
   const [activeAgentLog, setActiveAgentLog] = useState<AgentName | null>(null);
   const [agentStatuses, setAgentStatuses] = useState<Record<AgentName, StepState>>({
@@ -88,15 +172,99 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, [selectedJobId]);
 
-  // Automatically select the most recent job for the top Agent Banner
+  // Automatically select the most recent job
   useEffect(() => {
     if (jobs.length > 0 && !selectedJobId) {
       setSelectedJobId(jobs[0].id);
     }
-  }, [jobs]);
+  }, [jobs, selectedJobId]);
+
+  useEffect(() => {
+    setMounted(true);
+
+    const fetchJobs = async (userIdStr?: string) => {
+      try {
+        const url = userIdStr ? `/api/jobs?userId=${userIdStr}` : '/api/jobs';
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          setJobs(data.jobs || []);
+        }
+      } catch (e) {
+        console.error('Job fetch error:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const buildFallbackUser = (firebaseUser: { uid: string; email?: string | null }) => {
+      const email = firebaseUser.email || '';
+      const isOwner = ownerEmail && email.toLowerCase() === ownerEmail.toLowerCase();
+      return {
+        id: firebaseUser.uid,
+        email,
+        role: isOwner ? 'OWNER' : 'MEMBER',
+        allowedAgents: isOwner
+          ? ['jessica', 'sunny', 'rovert', 'tim', 'david', 'john']
+          : ['jessica', 'sunny'],
+        expiryAt: null,
+        createdAt: new Date(),
+        connections: {}
+      } as User;
+    };
+
+    const unsubscribe = onAuthChange(async (firebaseUser) => {
+      if (!firebaseUser) {
+        router.push('/login');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/auth/me?uid=${firebaseUser.uid}`);
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data.user);
+          fetchJobs(firebaseUser.uid);
+        } else {
+          setUser(buildFallbackUser(firebaseUser));
+          fetchJobs(firebaseUser.uid);
+        }
+      } catch (e) {
+        console.error('Auth sync error:', e);
+        setUser(buildFallbackUser(firebaseUser));
+        setLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router, ownerEmail]);
+
+  // Handle themes separate from auth to avoid race
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
+    if (savedTheme) {
+      setTheme(savedTheme);
+      document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      setTheme('dark');
+      document.documentElement.classList.add('dark');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    document.documentElement.classList.toggle('dark');
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
 
   const handleDeleteJob = async (e: React.MouseEvent, jobId: string) => {
-    e.stopPropagation(); // Don't trigger the card click
+    e.stopPropagation();
     if (!confirm('정말 이 프로젝트를 삭제하시겠습니까? 관련 모든 데이터가 사라집니다.')) return;
 
     try {
@@ -121,7 +289,7 @@ export default function DashboardPage() {
     window.location.href = `${path}?uid=${user.id}`;
   };
 
-  const handleDisconnect = async (platform: string) => {
+  const handleDisconnectAction = async (platform: string) => {
     if (!user?.id) return;
     if (!confirm(`${platform} 연동을 해제하시겠습니까?`)) return;
 
@@ -133,115 +301,28 @@ export default function DashboardPage() {
       });
 
       if (res.ok) {
-        // Refresh user data to update UI
         const meRes = await fetch(`/api/auth/me?uid=${user.id}`);
         if (meRes.ok) {
           const data = await meRes.json();
           setUser(data.user);
         }
-      } else {
-        alert('연동 해제 실패');
       }
     } catch (e) {
       console.error(e);
-      alert('연동 해제 중 에러 발생');
     }
   };
 
-  useEffect(() => {
-    setMounted(true);
-
-    const fetchJobs = async (userIdStr?: string) => {
-      try {
-        const url = userIdStr ? `/api/jobs?userId=${userIdStr}` : '/api/jobs';
-        const res = await fetch(url);
-        if (res.ok) {
-          const data = await res.json();
-          setJobs(data.jobs || []);
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const buildFallbackUser = (firebaseUser: { uid: string; email?: string | null }) => {
-      const email = firebaseUser.email || '';
-      const isOwner = ownerEmail && email.toLowerCase() === ownerEmail;
-      return {
-        id: firebaseUser.uid,
-        email,
-        role: isOwner ? 'OWNER' : 'MEMBER',
-        allowedAgents: isOwner
-          ? ['jessica', 'sunny', 'rovert', 'tim', 'david', 'john']
-          : ['jessica', 'sunny'],
-        expiryAt: null,
-        createdAt: new Date(),
-      } as User;
-    };
-
-    const unsubscribe = onAuthChange(async (firebaseUser) => {
-      if (!firebaseUser) {
-        router.push('/login');
-        return;
-      }
-
-      try {
-        const res = await fetch(`/api/auth/me?uid=${firebaseUser.uid}`);
-        if (res.ok) {
-          const data = await res.json();
-          setUser(data.user);
-          fetchJobs(firebaseUser.uid);
-        } else {
-          setUser(buildFallbackUser(firebaseUser));
-          fetchJobs(firebaseUser.uid);
-        }
-      } catch (e) {
-        setUser(buildFallbackUser(firebaseUser));
-        setLoading(false);
-      }
-    });
-
-    // Load theme from localStorage
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
-    if (savedTheme) {
-      setTheme(savedTheme);
-      document.documentElement.classList.toggle('dark', savedTheme === 'dark');
-    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setTheme('dark');
-      document.documentElement.classList.add('dark');
-    }
-
-    return () => unsubscribe();
-  }, [router]);
-
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
-    document.documentElement.classList.toggle('dark');
-  };
-
-  // Calculate connected count reliably
-  // HOOKS MUST BE CALLED BEFORE CONDITIONAL RETURNS
+  // Connected count memo
   const connectedCount = useMemo(() => {
-    if (!mounted || !user) return 0;
-    const connections = user.connections || {};
-    // Check both map keys and direct properties if any
-    const connectedPlatforms = Object.keys(connections).filter(key => {
-      const conn = (connections as any)[key];
-      return conn && (conn.connected === true || conn.accessToken);
-    });
-    return connectedPlatforms.length;
-  }, [mounted, user]);
+    if (!user || !user.connections) return 0;
+    const conns = user.connections;
+    return Object.keys(conns).filter(key => {
+      const c = (conns as any)[key];
+      return c && (c.connected === true || c.accessToken);
+    }).length;
+  }, [user]);
 
   if (!mounted) return null;
-
-  async function handleSignOut() {
-    await signOut();
-    router.push('/login');
-  }
 
   return (
     <ClientOnly>
@@ -289,6 +370,7 @@ export default function DashboardPage() {
                 <p className="text-slate-500 dark:text-slate-400 font-medium">Your agent workforce is operational.</p>
               </div>
 
+              {/* Platforms */}
               <section className="mb-12">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-bold text-slate-900 dark:text-white">Platform Connections</h3>
@@ -296,66 +378,66 @@ export default function DashboardPage() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <PlatformCard 
-                  name="YouTube" 
-                  icon={<Youtube className="text-red-600" />} 
-                  connected={!!(user?.connections?.youtube?.connected || (user?.connections as any)?.YouTube?.connected)} 
-                  channelName={user?.connections?.youtube?.channelName || (user?.connections as any)?.YouTube?.channelName}
-                  thumbnail={user?.connections?.youtube?.thumbnail || (user?.connections as any)?.YouTube?.thumbnail}
-                  onClick={() => startOAuth('/api/auth/youtube/login')}
-                />
-                <PlatformCard 
-                  name="TikTok" 
-                  icon={<Music2 className="text-black dark:text-white" />} 
-                  connected={!!user?.connections?.tiktok?.connected} 
-                  onClick={() => startOAuth('/api/auth/tiktok/login')}
-                />
-                <PlatformCard 
-                  name="Instagram" 
-                  icon={<Instagram className="text-pink-600" />} 
-                  connected={!!user?.connections?.instagram?.connected} 
-                  onClick={() => startOAuth('/api/auth/meta/login')}
-                />
-                <PlatformCard 
-                  name="Threads" 
-                  icon={<AtSign className="text-slate-800 dark:text-white" />} 
-                  connected={!!user?.connections?.threads?.connected} 
-                  onClick={() => startOAuth('/api/auth/threads/login')}
-                />
-                <PlatformCard 
-                  name="X / Twitter" 
-                  icon={<Twitter className="text-blue-400" />} 
-                  connected={!!user?.connections?.x?.connected} 
-                  onClick={() => startOAuth('/api/auth/x/login')}
-                />
-                <PlatformCard 
-                  name="Facebook" 
-                  icon={<Facebook className="text-blue-600" />} 
-                  connected={!!user?.connections?.facebook?.connected} 
-                  onClick={() => startOAuth('/api/auth/meta/login')}
-                />
-                <PlatformCard 
-                  name="LinkedIn" 
-                  icon={<Linkedin className="text-blue-700" />} 
-                  connected={!!user?.connections?.linkedin?.connected} 
-                  onClick={() => startOAuth('/api/auth/linkedin/login')}
-                />
-                <PlatformCard 
-                  name="Reddit" 
-                  icon={<MessageSquare className="text-orange-600" />} 
-                  connected={!!user?.connections?.reddit?.connected} 
-                  onClick={() => startOAuth('/api/auth/reddit/login')}
-                  onDisconnect={() => handleDisconnect('reddit')}
-                />
+                    name="YouTube" 
+                    icon={<Youtube className="text-red-600" />} 
+                    connected={!!(user?.connections?.youtube?.connected || (user?.connections as any)?.YouTube?.connected)} 
+                    channelName={user?.connections?.youtube?.channelName || (user?.connections as any)?.YouTube?.channelName}
+                    thumbnail={user?.connections?.youtube?.thumbnail || (user?.connections as any)?.YouTube?.thumbnail}
+                    onClick={() => startOAuth('/api/auth/youtube/login')}
+                  />
+                  <PlatformCard 
+                    name="TikTok" 
+                    icon={<Music className="text-black dark:text-white" />} 
+                    connected={!!user?.connections?.tiktok?.connected} 
+                    onClick={() => startOAuth('/api/auth/tiktok/login')}
+                  />
+                  <PlatformCard 
+                    name="Instagram" 
+                    icon={<Instagram className="text-pink-600" />} 
+                    connected={!!user?.connections?.instagram?.connected} 
+                    onClick={() => startOAuth('/api/auth/meta/login')}
+                  />
+                  <PlatformCard 
+                    name="Threads" 
+                    icon={<AtSign className="text-slate-800 dark:text-white" />} 
+                    connected={!!user?.connections?.threads?.connected} 
+                    onClick={() => startOAuth('/api/auth/threads/login')}
+                  />
+                  <PlatformCard 
+                    name="X / Twitter" 
+                    icon={<Twitter className="text-blue-400" />} 
+                    connected={!!user?.connections?.x?.connected} 
+                    onClick={() => startOAuth('/api/auth/x/login')}
+                  />
+                  <PlatformCard 
+                    name="Facebook" 
+                    icon={<Facebook className="text-blue-600" />} 
+                    connected={!!user?.connections?.facebook?.connected} 
+                    onClick={() => startOAuth('/api/auth/meta/login')}
+                  />
+                  <PlatformCard 
+                    name="LinkedIn" 
+                    icon={<Linkedin className="text-blue-700" />} 
+                    connected={!!user?.connections?.linkedin?.connected} 
+                    onClick={() => startOAuth('/api/auth/linkedin/login')}
+                  />
+                  <PlatformCard 
+                    name="Reddit" 
+                    icon={<MessageSquare className="text-orange-600" />} 
+                    connected={!!user?.connections?.reddit?.connected} 
+                    onClick={() => startOAuth('/api/auth/reddit/login')}
+                    onDisconnect={() => handleDisconnectAction('reddit')}
+                  />
                 </div>
               </section>
 
+              {/* Workforce */}
               <section className="mb-12">
-                <h3 className="text-lg font-bold text-slate-900 mb-6">Agent Workforce</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Agent Workforce</h3>
                 <AgentBannerGrid 
                   statuses={agentStatuses}
                   onAgentClick={(agent) => {
                     if (jobs.length > 0) {
-                      // Use the selected job or most recent
                       const targetJob = jobs.find(j => j.id === selectedJobId) || jobs[0];
                       setSelectedJobId(targetJob.id);
                       setActiveAgentLog(agent);
@@ -366,6 +448,7 @@ export default function DashboardPage() {
                 />
               </section>
 
+              {/* Jobs */}
               <section>
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-bold text-slate-900 dark:text-white">Current Productions</h3>
@@ -428,89 +511,5 @@ export default function DashboardPage() {
         )}
       </main>
     </ClientOnly>
-  );
-}
-
-function PlatformCard({ 
-  name, 
-  icon, 
-  connected, 
-  onClick, 
-  onDisconnect,
-  thumbnail,
-  channelName
-}: { 
-  name: string, 
-  icon: ReactNode, 
-  connected?: boolean, 
-  onClick?: () => void,
-  onDisconnect?: () => void,
-  thumbnail?: string,
-  channelName?: string
-}) {
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (!onClick) return;
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      onClick();
-    }
-  };
-
-  return (
-    <GlassCard 
-      className={`p-5 border border-slate-100 dark:border-slate-800 hover:border-amber-300 dark:hover:border-amber-400 transition-all group bg-white dark:bg-slate-900 shadow-sm hover:shadow-md hover:-translate-y-1 ${onClick ? 'cursor-pointer' : ''}`} 
-      onClick={onClick}
-      hover
-      role={onClick ? 'button' : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      onKeyDown={handleKeyDown}
-    >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-slate-50 rounded-lg group-hover:bg-amber-50 transition-transform overflow-hidden w-10 h-10 flex items-center justify-center">
-            {thumbnail ? (
-              <img src={thumbnail} alt={name} className="w-full h-full rounded-full object-cover shadow-sm" />
-            ) : (
-              icon
-            )}
-          </div>
-          <div>
-            <span className="font-bold text-slate-800 dark:text-slate-100 block">{channelName || name}</span>
-            {connected && <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider">Sync Active</span>}
-          </div>
-        </div>
-        {connected && (
-          <div className="p-1 bg-emerald-50 rounded-full">
-            <Check size={14} className="text-emerald-500" />
-          </div>
-        )}
-      </div>
-      <div className="flex gap-2">
-        <Button 
-          variant={connected ? "ghost" : "secondary"} 
-          size="sm" 
-          className={`flex-1 text-[10px] font-black uppercase tracking-widest ${connected ? 'text-slate-400' : 'bg-slate-900 text-white shadow-lg'}`}
-          onClick={(event) => {
-            event.stopPropagation();
-            onClick?.();
-          }}
-        >
-          {connected ? "Manage" : "Connect Now"}
-        </Button>
-        {connected && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 hover:bg-red-50"
-            onClick={(event) => {
-              event.stopPropagation();
-              onDisconnect?.();
-            }}
-          >
-            Disconnect
-          </Button>
-        )}
-      </div>
-    </GlassCard>
   );
 }
