@@ -9,7 +9,8 @@ export async function GET(req: NextRequest) {
   }
 
   const client_id = process.env.LINKEDIN_CLIENT_ID?.trim();
-  const redirect_uri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/linkedin/callback`;
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, "");
+  const redirect_uri = `${appUrl}/api/auth/linkedin/callback`;
   
   // Adjusted Scopes: Removed 'w_organization_social' for now
   // 'openid', 'profile', 'email' are basic OpenID Connect scopes

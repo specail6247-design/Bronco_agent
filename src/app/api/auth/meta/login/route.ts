@@ -9,7 +9,8 @@ export async function GET(req: NextRequest) {
   }
 
   const client_id = process.env.META_APP_ID;
-  const redirect_uri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback/meta`;
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, "");
+  const redirect_uri = `${appUrl}/api/auth/callback/meta`;
   
   // Extra-Dietted scopes: Removed 'email' to bypass the final "Invalid Scope" error.
   // We only keep the permissions verified in the Meta Dashboard.

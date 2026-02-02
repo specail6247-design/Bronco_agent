@@ -10,7 +10,8 @@ export async function GET(req: NextRequest) {
   }
 
   const client_id = process.env.X_CLIENT_ID?.trim();
-  const redirect_uri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/x/callback`;
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, "");
+  const redirect_uri = `${appUrl}/api/auth/x/callback`;
   
   // PKCE: Code Verifier and Challenge
   const codeVerifier = crypto.randomBytes(32).toString('base64url');

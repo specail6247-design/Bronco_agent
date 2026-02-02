@@ -4,7 +4,7 @@ const TIKTOK_CLIENT_KEY = process.env.TIKTOK_CLIENT_KEY;
 const TIKTOK_CLIENT_SECRET = process.env.TIKTOK_CLIENT_SECRET;
 const NEXT_PUBLIC_APP_URL = process.env.NEXT_PUBLIC_APP_URL;
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://bronco-agent.vercel.app';
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://bronco-agent.vercel.app').replace(/\/$/, "");
 const REDIRECT_URI = `${APP_URL}/api/auth/callback/tiktok`;
 
 // PKCE: Generate Code Verifier
