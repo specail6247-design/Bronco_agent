@@ -288,6 +288,32 @@ export default function DashboardPage() {
     return () => unsubscribe();
   }, [router, ownerEmail, buildFallbackUser, fetchJobs]);
 
+  // Re-fetch user data if we return from an OAuth success redirect
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const hasSuccess = params.get('youtube') === 'success' || 
+                       params.get('x') === 'success' || 
+                       params.get('tiktok') === 'success' ||
+                       params.get('meta') === 'success';
+
+    if (hasSuccess && user?.id) {
+      setLoading(true);
+      fetch(`/api/auth/me?uid=${user.id}`)
+        .then(res => res.json())
+        .then(data => {
+          setUser(data.user);
+          setLoading(false);
+          // Clean up URL to avoid repeated refreshes
+          router.replace('/dashboard', { scroll: false });
+        })
+        .catch(err => {
+          console.error('OAuth return refresh failed:', err);
+          setLoading(false);
+        });
+    }
+  }, [user?.id, router]);
+
   // Handle themes separate from auth to avoid race
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
@@ -438,7 +464,7 @@ export default function DashboardPage() {
                     name="YouTube" 
                     icon={<Youtube size={20} className="text-red-600" />} 
                     connected={!!(user?.connections?.youtube?.connected || (user?.connections as any)?.YouTube?.connected)} 
-                    channelName={user?.connections?.youtube?.channelName || (user?.connections as any)?.YouTube?.channelName}
+                    channelName={user?.connections?.youtube?.channelName || (user?.connections as any)?.YouTube?.channelName || (user?.connections?.youtube as any)?.title}
                     thumbnail={user?.connections?.youtube?.thumbnail || (user?.connections as any)?.YouTube?.thumbnail}
                     onClick={() => startOAuth('/api/auth/youtube/login')}
                   />
