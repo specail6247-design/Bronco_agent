@@ -26,19 +26,24 @@ const PIPELINE_ORDER: AgentName[] = ['jessica', 'sunny', 'rovert', 'tim', 'david
  */
 export async function runPipeline(job: Job) {
   console.log(`[Pipeline] Running for job ${job.id}`);
+  const adminDb = getAdminDb();
   
   // Ensure job is in RUNNING state
   if (job.state === 'SCHEDULED') {
-    const adminDb = getAdminDb();
     await adminDb.collection('jobs').doc(job.id).update({ state: 'RUNNING', updatedAt: new Date() });
   }
 
-  // Log immediate startup
-  await logActivity(job.id, 'jessica', 'THOUGHT', `Pipeline engine engaged for job "${job.topic}". Jessica is beginning research.`);
+  // Log immediate startup with attempt counter to distinguish re-runs
+  const attemptId = Math.floor(Math.random() * 9000) + 1000;
+  await logActivity(job.id, 'jessica', 'THOUGHT', `[#${attemptId}] Pipeline engine started. Validating workforce environment for "${job.topic || 'Unknown Topic'}"...`);
+
+  if (!job.id || !job.topic) {
+    await logActivity(job.id, 'jessica', 'ERROR', `[#${attemptId}] Critical: Mission parameters incomplete (Missing Job ID or Topic).`);
+    await adminDb.collection('jobs').doc(job.id).update({ state: 'FAILED', updatedAt: new Date() });
+    return;
+  }
 
   try {
-    const adminDb = getAdminDb();
-
     // Fetch existing steps
     const stepsSnap = await adminDb.collection('job_steps').where('jobId', '==', job.id).get();
     const existingSteps = stepsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
@@ -116,11 +121,17 @@ export async function runPipeline(job: Job) {
       // await updateJob(job.id, { currentStep: agentName });
 
       // Run Agent
-      console.log(`[Pipeline] Running Agent: ${agentName}`);
+      console.log(`[Pipeline] Running Agent: ${agentName} (Attempt #${attemptId})`);
+      await logActivity(job.id, agentName as any, 'THOUGHT', `[#${attemptId}] Activating ${agentName}. Initializing neural patterns...`);
+      
       let result: AgentResult;
       
       try {
         const agentFunc = agents[agentName];
+        if (typeof agentFunc !== 'function') {
+           throw new Error(`Agent definition for "${agentName}" is missing or corrupted.`);
+        }
+        
         result = await agentFunc(context);
         
         if (!result.success) throw new Error(result.error);
