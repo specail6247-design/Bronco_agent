@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Zap } from 'lucide-react';
 import ClientOnly from '@/components/ClientOnly';
+import Footer from '@/components/Footer';
 
 export default function Home() {
   const router = useRouter();
@@ -48,6 +49,8 @@ export default function Home() {
               />
             ))}
           </div>
+
+          <Footer />
         </div>
       </main>
     </ClientOnly>

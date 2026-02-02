@@ -7,6 +7,7 @@ import { Mail, Lock, Zap } from 'lucide-react';
 import { GlassCard, Button, Input } from '@/components/ui';
 import { signIn } from '@/lib/firebase/auth';
 import ClientOnly from '@/components/ClientOnly';
+import Footer from '@/components/Footer';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -107,10 +108,7 @@ export default function LoginPage() {
             </div>
           </GlassCard>
 
-          {/* Footer */}
-          <p className="mt-8 text-center text-sm text-slate-500">
-            © 2024 Bronco. Digital Nomad Agent Team.
-          </p>
+          <Footer />
         </div>
       </main>
     </ClientOnly>

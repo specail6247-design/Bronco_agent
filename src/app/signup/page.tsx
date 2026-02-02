@@ -7,6 +7,7 @@ import { Mail, Lock, User, Key, Zap } from 'lucide-react';
 import { GlassCard, Button, Input } from '@/components/ui';
 import { signUp } from '@/lib/firebase/auth';
 import ClientOnly from '@/components/ClientOnly';
+import Footer from '@/components/Footer';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -201,10 +202,7 @@ export default function SignupPage() {
             </div>
           </GlassCard>
 
-          {/* Footer */}
-          <p className="mt-8 text-center text-sm text-slate-500">
-            Need an invite key? Contact your team admin.
-          </p>
+          <Footer />
         </div>
       </main>
     </ClientOnly>
