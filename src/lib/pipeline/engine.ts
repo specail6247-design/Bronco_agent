@@ -1,5 +1,5 @@
 import { Job, JobStep, Artifact, AgentContext, AgentResult, AgentName } from '@/types';
-import { updateJob, createJobStep, updateJobStep, createArtifact, getJobSteps, getArtifactsByJob } from '@/lib/firebase/firestore';
+import { getAdminDb } from '@/lib/firebase/admin';
 import { jessica } from './agents/jessica';
 import { sunny } from './agents/sunny';
 import { rovert } from './agents/rovert';
@@ -29,16 +29,23 @@ export async function runPipeline(job: Job) {
   
   // Ensure job is in RUNNING state
   if (job.state === 'SCHEDULED') {
-    await updateJob(job.id, { state: 'RUNNING' });
+    const adminDb = getAdminDb();
+    await adminDb.collection('jobs').doc(job.id).update({ state: 'RUNNING', updatedAt: new Date() });
   }
 
   // Log immediate startup
   await logActivity(job.id, 'jessica', 'THOUGHT', `Pipeline engine engaged for job "${job.topic}". Jessica is beginning research.`);
 
   try {
-    // Fetch existing steps and artifacts
-    const existingSteps = await getJobSteps(job.id);
-    const existingArtifacts = await getArtifactsByJob(job.id);
+    const adminDb = getAdminDb();
+
+    // Fetch existing steps
+    const stepsSnap = await adminDb.collection('job_steps').where('jobId', '==', job.id).get();
+    const existingSteps = stepsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+
+    // Fetch existing artifacts
+    const artifactsSnap = await adminDb.collection('artifacts').where('jobId', '==', job.id).get();
+    const existingArtifacts = artifactsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
 
     // Initial context
     let context: AgentContext = {
@@ -68,7 +75,7 @@ export async function runPipeline(job: Job) {
              // If Tim is done, but we aren't past approval, check state.
              if (job.state !== 'NEED_APPROVAL') {
                  // Set to NEED_APPROVAL
-                 await updateJob(job.id, { state: 'NEED_APPROVAL' });
+                 await adminDb.collection('jobs').doc(job.id).update({ state: 'NEED_APPROVAL', updatedAt: new Date() });
                  
                  // TODO: Send Telegram Notification Here
                  // await sendApprovalRequest(job, ...);
@@ -86,14 +93,23 @@ export async function runPipeline(job: Job) {
       // Create or update step to WORKING
       let stepId = step?.id;
       if (!stepId) {
-        stepId = await createJobStep({
+        const stepRef = adminDb.collection('job_steps').doc();
+        stepId = stepRef.id;
+        await stepRef.set({
           jobId: job.id,
           stepName: agentName,
           state: 'WORKING',
           startedAt: new Date(),
+          updatedAt: new Date(),
+          createdAt: new Date(),
         });
       } else if (step?.state !== 'WORKING') {
-        await updateJobStep(stepId, { state: 'WORKING', startedAt: new Date(), errorLog: '' });
+        await adminDb.collection('job_steps').doc(stepId).update({ 
+          state: 'WORKING', 
+          startedAt: new Date(), 
+          updatedAt: new Date(),
+          errorLog: '' 
+        });
       }
 
       // Update Dashboard Status (optional, but good for UI responsiveness)
@@ -110,7 +126,7 @@ export async function runPipeline(job: Job) {
         if (!result.success) throw new Error(result.error);
 
         // Store Artifact
-        await createArtifact({
+        await adminDb.collection('artifacts').add({
           jobId: job.id,
           stepName: agentName,
           type: result.artifactType,
@@ -119,9 +135,10 @@ export async function runPipeline(job: Job) {
         });
 
         // Update Step to DONE
-        await updateJobStep(stepId!, { 
+        await adminDb.collection('job_steps').doc(stepId!).update({ 
           state: 'DONE', 
-          finishedAt: new Date() 
+          finishedAt: new Date(),
+          updatedAt: new Date()
         });
 
         // Update Context with new artifact
@@ -137,21 +154,26 @@ export async function runPipeline(job: Job) {
 
       } catch (error: any) {
         console.error(`[Pipeline] Agent ${agentName} failed:`, error);
-        await updateJobStep(stepId!, { 
+        await adminDb.collection('job_steps').doc(stepId!).update({ 
           state: 'FAILED', 
-          errorLog: error.message 
+          errorLog: error.message,
+          updatedAt: new Date()
         });
-        await updateJob(job.id, { state: 'FAILED' }); // Mark job as failed
+        await adminDb.collection('jobs').doc(job.id).update({ 
+          state: 'FAILED',
+          updatedAt: new Date()
+        }); // Mark job as failed
         return; // Stop pipeline
       }
     }
 
     // If we reached here, all steps are done
-    await updateJob(job.id, { state: 'DONE' });
+    await adminDb.collection('jobs').doc(job.id).update({ state: 'DONE', updatedAt: new Date() });
     console.log(`[Pipeline] Job ${job.id} completed successfully.`);
 
   } catch (error) {
     console.error(`[Pipeline] Critical error in job ${job.id}:`, error);
-    await updateJob(job.id, { state: 'FAILED' });
+    const adminDb = getAdminDb();
+    await adminDb.collection('jobs').doc(job.id).update({ state: 'FAILED', updatedAt: new Date() });
   }
 }
