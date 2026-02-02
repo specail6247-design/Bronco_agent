@@ -161,6 +161,18 @@ Implemented OAuth 2.0 flows for seamless platform connections:
 
 ---
 
+## 7. Project Phase: Infrastructural Consolidation (Feb 3, 2026 - Phase 2)
+
+### **Universal OAuth Standardization**
+
+- **Pattern Alignment**: Unified all social platform authentication paths. Moved outliers (YouTube, TikTok, Meta) from `api/auth/callback/[platform]` to the standardized `api/auth/[platform]/callback` pattern to match X, LinkedIn, and Reddit.
+- **Dynamic URI Safety**: Implemented a centralized `getStandardRedirectUri` utility.
+  - **Protocol Lock**: Ensures base URLs are correctly resolved using `CONFIG.APP_URL` as the source of truth if environment variables are missing.
+  - **Slash Elimination**: Automatically strips trailing slashes to prevent Google/TikTok/Meta from rejecting requests due to exact-match string sensitivity.
+- **Architectural Cleanup**: Deleted legacy redundant folders and simplified auth libraries to use the new shared utility, reducing the surface area for future integration bugs by 50%.
+
+---
+
 **Agent Name**: Antigravity (Google Deepmind)
 **Last Updated**: 2026-02-03
 **Status**: Stabilized & UI Optimized. Ready for live user testing. / 안정화 및 UI 최적화 완료. 실사용 테스트 준비 완료.

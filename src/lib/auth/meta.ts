@@ -1,8 +1,9 @@
+import { getStandardRedirectUri } from './utils';
+
 export async function exchangeMetaCode(code: string) {
   const client_id = process.env.META_APP_ID;
   const client_secret = process.env.META_APP_SECRET;
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, "");
-  const redirect_uri = `${appUrl}/api/auth/callback/meta`;
+  const redirect_uri = getStandardRedirectUri('meta');
 
   // 1. Exchange code for short-lived access token
   const tokenUrl = `https://graph.facebook.com/v19.0/oauth/access_token?client_id=${client_id}&redirect_uri=${encodeURIComponent(redirect_uri)}&client_secret=${client_secret}&code=${code}`;
@@ -74,8 +75,7 @@ export async function getInstagramAccounts(accessToken: string) {
  */
 export function getThreadsAuthUrl(uid: string) {
   const client_id = process.env.META_APP_ID;
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, "");
-  const redirect_uri = `${appUrl}/api/auth/callback/meta`;
+  const redirect_uri = getStandardRedirectUri('meta');
   const scopes = ['public_profile', 'instagram_basic', 'pages_show_list'].join(',');
 
   return `https://www.facebook.com/v19.0/dialog/oauth?client_id=${client_id}&redirect_uri=${encodeURIComponent(redirect_uri)}&state=${uid}&scope=${encodeURIComponent(scopes)}&response_type=code`;

@@ -1,15 +1,11 @@
-/**
- * Reddit API Helpers (2026 Compatible)
- * Reddit requires a descriptive User-Agent header for all API calls.
- */
+import { getStandardRedirectUri } from './utils';
 
 const USER_AGENT = `platform:bronco-agent:v1.0.0 (by /u/${process.env.REDDIT_USERNAME || 'bronco_agent'})`;
 
 export async function exchangeRedditCode(code: string) {
   const client_id = process.env.REDDIT_CLIENT_ID?.trim();
   const client_secret = process.env.REDDIT_CLIENT_SECRET?.trim();
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, "");
-  const redirect_uri = `${appUrl}/api/auth/reddit/callback`;
+  const redirect_uri = getStandardRedirectUri('reddit');
 
   const tokenUrl = 'https://www.reddit.com/api/v1/access_token';
   

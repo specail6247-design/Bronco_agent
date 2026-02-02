@@ -1,14 +1,11 @@
-/**
- * LinkedIn API Helpers (2026 Compatible)
- */
+import { getStandardRedirectUri } from './utils';
 
 const LINKEDIN_VERSION = '202601'; // Default version for 2026 requests
 
 export async function exchangeLinkedInCode(code: string) {
   const client_id = process.env.LINKEDIN_CLIENT_ID?.trim();
   const client_secret = process.env.LINKEDIN_CLIENT_SECRET?.trim();
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, "");
-  const redirect_uri = `${appUrl}/api/auth/linkedin/callback`;
+  const redirect_uri = getStandardRedirectUri('linkedin');
 
   const tokenUrl = 'https://www.linkedin.com/oauth/v2/accessToken';
   

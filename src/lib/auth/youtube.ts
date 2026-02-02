@@ -1,11 +1,11 @@
 import { google } from 'googleapis';
+import { getStandardRedirectUri } from './utils';
 
 const YOUTUBE_CLIENT_ID = process.env.YOUTUBE_CLIENT_ID;
 const YOUTUBE_CLIENT_SECRET = process.env.YOUTUBE_CLIENT_SECRET;
 
 export function getYouTubeOAuthClient() {
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, "");
-  const REDIRECT_URI = `${appUrl}/api/auth/callback/youtube`;
+  const REDIRECT_URI = getStandardRedirectUri('youtube');
   
   return new google.auth.OAuth2(
     YOUTUBE_CLIENT_ID,

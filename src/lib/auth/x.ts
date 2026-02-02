@@ -1,13 +1,9 @@
-/**
- * X (Twitter) API Helpers (2026 Compatible)
- * Uses OAuth 2.0 with PKCE.
- */
+import { getStandardRedirectUri } from './utils';
 
 export async function exchangeXCode(code: string, codeVerifier: string) {
   const client_id = process.env.X_CLIENT_ID?.trim();
   const client_secret = process.env.X_CLIENT_SECRET?.trim();
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, "");
-  const redirect_uri = `${appUrl}/api/auth/x/callback`;
+  const redirect_uri = getStandardRedirectUri('x');
 
   const tokenUrl = 'https://api.x.com/2/oauth2/token';
   
