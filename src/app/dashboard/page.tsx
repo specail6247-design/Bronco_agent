@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, type ReactNode, type KeyboardEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Plus, 
   Calendar, 
@@ -158,6 +158,7 @@ function PlatformCard({
 
 export default function DashboardPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [user, setUser] = useState<User | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
@@ -260,11 +261,12 @@ export default function DashboardPage() {
       }
 
       try {
-        // Optimization: Add a short timeout to prevent hang if API is slow
+        // Optimization: Increase timeout to 3s for slower connections
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1500);
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
 
-        const res = await fetch(`/api/auth/me?uid=${firebaseUser.uid}`, { signal: controller.signal });
+        // Add cache-buster even on initial fetch to be safe
+        const res = await fetch(`/api/auth/me?uid=${firebaseUser.uid}&t=${Date.now()}`, { signal: controller.signal });
         clearTimeout(timeoutId);
 
         if (res.ok) {
@@ -290,29 +292,30 @@ export default function DashboardPage() {
 
   // Re-fetch user data if we return from an OAuth success redirect
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
-    const hasSuccess = params.get('youtube') === 'success' || 
-                       params.get('x') === 'success' || 
-                       params.get('tiktok') === 'success' ||
-                       params.get('meta') === 'success';
+    const hasSuccess = searchParams.get('youtube') === 'success' || 
+                       searchParams.get('x') === 'success' || 
+                       searchParams.get('tiktok') === 'success' ||
+                       searchParams.get('meta') === 'success';
 
     if (hasSuccess && user?.id) {
       setLoading(true);
-      fetch(`/api/auth/me?uid=${user.id}`)
+      // Use cache-busting timestamp to ensure fresh data from Firestore
+      fetch(`/api/auth/me?uid=${user.id}&t=${Date.now()}`)
         .then(res => res.json())
         .then(data => {
-          setUser(data.user);
+          if (data.user) {
+            setUser(data.user);
+            // After successful refresh, clean up the URL
+            router.replace('/dashboard', { scroll: false });
+          }
           setLoading(false);
-          // Clean up URL to avoid repeated refreshes
-          router.replace('/dashboard', { scroll: false });
         })
         .catch(err => {
           console.error('OAuth return refresh failed:', err);
           setLoading(false);
         });
     }
-  }, [user?.id, router]);
+  }, [user?.id, searchParams, router]);
 
   // Handle themes separate from auth to avoid race
   useEffect(() => {
