@@ -1,28 +1,54 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export async function askGemini(prompt: string, jsonResponse = false) {
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
-
-  const result = await model.generateContent(prompt);
-  const response = await result.response;
-  const text = response.text();
-
-  if (jsonResponse) {
-    // Try to extract JSON if it's wrapped in markdown
-    const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/) || text.match(/{[\s\S]*}/);
-    if (jsonMatch) {
-      try {
-        return JSON.parse(jsonMatch[1] || jsonMatch[0]);
-      } catch (e) {
-        console.error("Failed to parse JSON from Gemini:", text);
-        throw new Error("Invalid JSON format received from AI");
-      }
-    } else {
-      throw new Error("AI failed to provide a valid JSON response");
-    }
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY is missing in environment variables.");
   }
 
-  return text;
+  const genAI = new GoogleGenerativeAI(apiKey);
+  
+  // Try primary model first
+  let modelName = "gemini-1.5-flash";
+  let model = genAI.getGenerativeModel({ model: modelName });
+
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    if (jsonResponse) {
+      const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/) || text.match(/{[\s\S]*}/);
+      if (jsonMatch) {
+        try {
+          return JSON.parse(jsonMatch[1] || jsonMatch[0]);
+        } catch (e) {
+          throw new Error(`JSON Parse Error: ${e instanceof Error ? e.message : String(e)}`);
+        }
+      }
+      throw new Error("AI output did not contain valid JSON");
+    }
+    return text;
+
+  } catch (error: any) {
+    console.warn(`[Gemini] Primary model ${modelName} failed. Attempting fallback...`, error.message);
+    
+    // Fallback to gemini-pro if 1.5-flash fails
+    try {
+      const fallbackModel = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const result = await fallbackModel.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      // Handle JSON extraction for fallback too...
+      if (jsonResponse) {
+         const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/) || text.match(/{[\s\S]*}/);
+         if (jsonMatch) return JSON.parse(jsonMatch[1] || jsonMatch[0]);
+      }
+      return text;
+    } catch (fallbackError: any) {
+      console.error("[Gemini] Both primary and fallback models failed.");
+      throw new Error(`Gemini API Error: ${error.message} (Fallback Also Failed: ${fallbackError.message})`);
+    }
+  }
 }
