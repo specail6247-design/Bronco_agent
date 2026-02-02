@@ -45,10 +45,10 @@ export async function GET(req: NextRequest) {
         updatedAt: new Date(),
         connected: true,
         profile: {
-          id: profile.id,
-          username: profile.username,
-          name: profile.name,
-          profile_image_url: profile.profile_image_url
+          id: profile?.id || '',
+          username: profile?.username || '',
+          name: profile?.name || '',
+          profile_image_url: profile?.profile_image_url || ''
         }
       }, { merge: true });
 

@@ -393,7 +393,10 @@ export default function DashboardPage() {
                   <div className="w-10 h-10 rounded-xl bg-slate-900 dark:bg-amber-400 flex items-center justify-center shadow-lg transform hover:rotate-12 transition-transform">
                     <Zap size={22} className="text-white dark:text-slate-900 fill-current" />
                   </div>
-                  <h1 className="text-xl font-black tracking-tight text-slate-900 dark:text-white uppercase">BRONCO</h1>
+                  <h1 className="text-xl font-black tracking-tight text-slate-900 dark:text-white uppercase flex items-center gap-2">
+                    BRONCO
+                    <span className="text-[9px] font-black bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 px-2 py-0.5 rounded-md tracking-normal normal-case">v1.0.3-FEB03</span>
+                  </h1>
                 </div>
 
                 <div className="flex items-center gap-4">
