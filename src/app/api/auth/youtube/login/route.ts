@@ -13,11 +13,13 @@ export async function GET(req: NextRequest) {
     }
 
     const host = req.headers.get('x-forwarded-host') || req.headers.get('host');
-    const protocol = req.headers.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
-    const dynamicUrl = host ? `${protocol}://${host}` : undefined;
+    const isLocal = host?.includes('localhost') || host?.includes('127.0.0.1');
     
-    // Prioritize the actual host being visited, then fall back to env vars
-    const appUrl = dynamicUrl || process.env.NEXT_PUBLIC_APP_URL || CONFIG.APP_URL;
+    // CRITICAL: Google Console only accepts registered URIs. 
+    // On Vercel, we MUST use the production domain even if accessed via a preview URL.
+    const appUrl = isLocal 
+      ? `http://${host}` 
+      : (process.env.NEXT_PUBLIC_APP_URL || CONFIG.APP_URL);
 
     const client = getYouTubeOAuthClient(appUrl);
     

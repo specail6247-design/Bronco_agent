@@ -395,7 +395,7 @@ export default function DashboardPage() {
                   </div>
                   <h1 className="text-xl font-black tracking-tight text-slate-900 dark:text-white uppercase flex items-center gap-2">
                     BRONCO
-                    <span className="text-[9px] font-black bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 px-2 py-0.5 rounded-md tracking-normal normal-case">v1.0.3-FEB03-P4</span>
+                    <span className="text-[9px] font-black bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 px-2 py-0.5 rounded-md tracking-normal normal-case">v1.0.3-FEB03-P5</span>
                   </h1>
                 </div>
 

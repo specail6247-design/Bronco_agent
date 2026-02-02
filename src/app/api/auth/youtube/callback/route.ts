@@ -17,9 +17,10 @@ export async function GET(req: NextRequest) {
     }
 
     const host = req.headers.get('x-forwarded-host') || req.headers.get('host');
-    const protocol = req.headers.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
-    const dynamicUrl = host ? `${protocol}://${host}` : undefined;
-    const appUrl = dynamicUrl || process.env.NEXT_PUBLIC_APP_URL || CONFIG.APP_URL;
+    const isLocal = host?.includes('localhost') || host?.includes('127.0.0.1');
+    const appUrl = isLocal 
+      ? `http://${host}` 
+      : (process.env.NEXT_PUBLIC_APP_URL || CONFIG.APP_URL);
 
     const client = getYouTubeOAuthClient(appUrl);
     const { tokens } = await client.getToken(code);
