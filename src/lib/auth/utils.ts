@@ -8,9 +8,15 @@ import { CONFIG } from '@/lib/config';
  * 3. Uniform path pattern: /api/auth/[platform]/callback
  */
 export function getStandardRedirectUri(platform: string): string {
-  // Use CONFIG.APP_URL as the rock-solid source of truth for production
-  // Strip trailing slashes to ensure exact matches in platform consoles
   const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || CONFIG.APP_URL || '').replace(/\/$/, "");
   
+  // YouTube, TikTok, and Meta were originally registered with the 'callback/platform' pattern.
+  // We revert to this pattern specifically for these platforms to avoid Console Mismatch errors.
+  const legacyPlatforms = ['youtube', 'tiktok', 'meta'];
+  if (legacyPlatforms.includes(platform)) {
+    return `${baseUrl}/api/auth/callback/${platform}`;
+  }
+  
+  // X, LinkedIn, and Reddit use the unified 'platform/callback' pattern.
   return `${baseUrl}/api/auth/${platform}/callback`;
 }

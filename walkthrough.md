@@ -173,6 +173,18 @@ Implemented OAuth 2.0 flows for seamless platform connections:
 
 ---
 
+## 8. Project Phase: Emergency Legacy Patch (Feb 3, 2026 - Phase 3)
+
+### **Legacy Redirect URI Reversion**
+
+- **Compatibility Reversion**: Realized that moving YouTube, TikTok, and Meta callback paths to the new pattern broke existing registrations in their respective Developer Consoles (causing `redirect_uri_mismatch`).
+- **Hybrid Pattern Utility**: Re-coded `utils.ts` to support two patterns:
+  1.  **Legacy (YT, TikTok, Meta)**: Continues to send `/api/auth/callback/[platform]` to match existing cloud console settings.
+  2.  **Standard (X, LinkedIn, Reddit)**: Sends the unified `/api/auth/[platform]/callback` pattern.
+- **Verification**: Bumped build version to **v1.0.3-FEB03-P3** for live tracking.
+
+---
+
 **Agent Name**: Antigravity (Google Deepmind)
 **Last Updated**: 2026-02-03
 **Status**: Stabilized & UI Optimized. Ready for live user testing. / 안정화 및 UI 최적화 완료. 실사용 테스트 준비 완료.
