@@ -12,25 +12,15 @@ import {
   Youtube,
   Instagram,
   Check,
-  Trash2,
-  X as XIcon,
-  Twitter,
-  Music,
-  AtSign,
   LayoutGrid,
   Hash,
   Facebook,
   Linkedin,
   MessageSquare,
   Moon,
-  Sun
+  Sun,
+  Trash2
 } from 'lucide-react';
-
-const XLogo = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
-    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-  </svg>
-);
 
 import { 
   GlassCard, 
@@ -43,6 +33,25 @@ import { signOut, onAuthChange } from '@/lib/firebase/auth';
 import type { Job, User, AgentName, StepState } from '@/types';
 import ClientOnly from '@/components/ClientOnly';
 import { CONFIG } from '@/lib/config';
+
+// Premium Custom SVGs for Branding
+const XLogo = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
+
+const TikTokLogo = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 448 512" fill="currentColor" className={className}>
+    <path d="M448,209.91a210.06,210.06,0,0,1-122.77-39.25V349.38A162.55,162.55,0,1,1,185,188.31V278.2a74.62,74.62,0,1,0,52.23,71.18V0l88,0a121.18,121.18,0,0,0,1.86,22.17h0A122.18,122.18,0,0,0,448,109.91Z" />
+  </svg>
+);
+
+const ThreadsLogo = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="M14.88 11.53c0 .81-.13 1.48-.39 2.01s-.63.93-1.11 1.2a3.81 3.81 0 0 1-1.84.4c-1 0-1.85-.36-2.54-1.07s-1.03-1.74-1.03-3.07.35-2.37 1.05-3.1 1.54-1.1 2.52-1.1c1.55 0 2.62.8 3.2 2.39h.06V7.08h1.03v7.35c0 1.23.27 2.15.82 2.76s1.39.92 2.51.92c.6 0 1.25-.13 1.95-.39v.93c-.63.22-1.28.33-1.95.33-1.46 0-2.6-.45-3.41-1.34s-1.21-2.18-1.21-3.87v-2.22zm-1.04-.03c0-1-.22-1.74-.65-2.22s-1-.72-1.7-.72-1.35.26-1.78.78-.65 1.3-.65 2.34.22 1.83.66 2.33 1.02.75 1.76.75 1.37-.25 1.8-.75.56-1.33.56-2.51zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
+  </svg>
+);
 
 // Sub-components
 function PlatformCard({ 
@@ -85,7 +94,7 @@ function PlatformCard({
             {thumbnail ? (
               <img src={thumbnail} alt={name} className="w-full h-full rounded-full object-cover shadow-sm" />
             ) : (
-              <div className="text-slate-700 dark:text-slate-200">
+              <div className="text-slate-800 dark:text-slate-100">
                 {icon}
               </div>
             )}
@@ -96,7 +105,7 @@ function PlatformCard({
           </div>
         </div>
         {connected && (
-          <div className="p-1 bg-emerald-50 rounded-full">
+          <div className="p-1 bg-emerald-50 dark:bg-emerald-900/20 rounded-full">
             <Check size={14} className="text-emerald-500" />
           </div>
         )}
@@ -105,7 +114,7 @@ function PlatformCard({
         <Button 
           variant={connected ? "ghost" : "secondary"} 
           size="sm" 
-          className={`flex-1 text-[10px] font-black uppercase tracking-widest ${connected ? 'text-slate-400' : 'bg-slate-900 text-white shadow-lg'}`}
+          className={`flex-1 text-[10px] font-black uppercase tracking-widest ${connected ? 'text-slate-400' : 'bg-slate-900 text-white dark:bg-amber-400 dark:text-slate-900 shadow-lg'}`}
           onClick={(event) => {
             event.stopPropagation();
             onClick?.();
@@ -117,7 +126,7 @@ function PlatformCard({
           <Button 
             variant="ghost" 
             size="sm" 
-            className="text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 hover:bg-red-50"
+            className="text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
             onClick={(event) => {
               event.stopPropagation();
               onDisconnect?.();
@@ -201,8 +210,6 @@ export default function DashboardPage() {
         }
       } catch (e) {
         console.error('Job fetch error:', e);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -233,9 +240,12 @@ export default function DashboardPage() {
         if (res.ok) {
           const data = await res.json();
           setUser(data.user);
+          // STOP LOADING SCREEN AS SOON AS USER IS FETCHED
+          setLoading(false);
           fetchJobs(firebaseUser.uid);
         } else {
           setUser(buildFallbackUser(firebaseUser));
+          setLoading(false);
           fetchJobs(firebaseUser.uid);
         }
       } catch (e) {
@@ -337,8 +347,9 @@ export default function DashboardPage() {
     <ClientOnly>
       <main className="min-h-screen pb-12 bg-white dark:bg-slate-950 transition-colors duration-500">
         {loading ? (
-          <div className="min-h-screen flex items-center justify-center">
-            <div className="w-10 h-10 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin" />
+          <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-slate-950">
+            <div className="w-12 h-12 border-4 border-slate-200 dark:border-slate-800 border-t-amber-400 rounded-full animate-spin shadow-xl" />
+            <p className="mt-4 text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-600 animate-pulse">Syncing Workforce</p>
           </div>
         ) : (
           <>
@@ -348,7 +359,7 @@ export default function DashboardPage() {
                   <div className="w-10 h-10 rounded-xl bg-slate-900 dark:bg-amber-400 flex items-center justify-center shadow-lg transform hover:rotate-12 transition-transform">
                     <Zap size={22} className="text-white dark:text-slate-900 fill-current" />
                   </div>
-                  <h1 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">BRONCO</h1>
+                  <h1 className="text-xl font-black tracking-tight text-slate-900 dark:text-white uppercase">BRONCO</h1>
                 </div>
 
                 <div className="flex items-center gap-4">
@@ -357,10 +368,10 @@ export default function DashboardPage() {
                     size="sm" 
                     icon={theme === 'light' ? <Moon size={20} /> : <Sun size={20} className="text-amber-400" />} 
                     onClick={toggleTheme}
-                    className="w-10 h-10 p-0 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-800"
+                    className="w-10 h-10 p-0 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800"
                   />
                   {user?.role === 'OWNER' && (
-                    <Button variant="ghost" size="sm" icon={<Settings size={18} />} onClick={() => router.push('/admin')}>
+                    <Button variant="ghost" size="sm" icon={<Settings size={18} />} onClick={() => router.push('/admin')} className="hidden sm:inline-flex">
                       Admin
                     </Button>
                   )}
@@ -376,41 +387,23 @@ export default function DashboardPage() {
                 <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2">
                   Welcome, {user?.name || user?.email?.split('@')[0]}!
                 </h2>
-                <p className="text-slate-500 dark:text-slate-400 font-medium">Your agent workforce is operational.</p>
+                <p className="text-slate-500 dark:text-slate-400 font-medium">Your digital agent workforce is ready for the next campaign.</p>
               </div>
 
               {/* Platforms */}
               <section className="mb-12">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Platform Connections</h3>
-                  <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-full text-[10px] font-bold uppercase tracking-widest">{connectedCount} Connected</span>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Social Multi-Channel Sync</h3>
+                  <span className="px-3 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 rounded-full text-[10px] font-black uppercase tracking-widest">{connectedCount} ACTIVE</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <PlatformCard 
                     name="YouTube" 
-                    icon={<Youtube className="text-red-600" />} 
+                    icon={<Youtube size={20} className="text-red-600" />} 
                     connected={!!(user?.connections?.youtube?.connected || (user?.connections as any)?.YouTube?.connected)} 
                     channelName={user?.connections?.youtube?.channelName || (user?.connections as any)?.YouTube?.channelName}
                     thumbnail={user?.connections?.youtube?.thumbnail || (user?.connections as any)?.YouTube?.thumbnail}
                     onClick={() => startOAuth('/api/auth/youtube/login')}
-                  />
-                  <PlatformCard 
-                    name="TikTok" 
-                    icon={<Music className="text-black dark:text-white" />} 
-                    connected={!!user?.connections?.tiktok?.connected} 
-                    onClick={() => startOAuth('/api/auth/tiktok/login')}
-                  />
-                  <PlatformCard 
-                    name="Instagram" 
-                    icon={<Instagram className="text-pink-600" />} 
-                    connected={!!user?.connections?.instagram?.connected} 
-                    onClick={() => startOAuth('/api/auth/meta/login')}
-                  />
-                  <PlatformCard 
-                    name="Threads" 
-                    icon={<AtSign size={20} />} 
-                    connected={!!user?.connections?.threads?.connected} 
-                    onClick={() => startOAuth('/api/auth/threads/login')}
                   />
                   <PlatformCard 
                     name="X" 
@@ -419,20 +412,38 @@ export default function DashboardPage() {
                     onClick={() => startOAuth('/api/auth/x/login')}
                   />
                   <PlatformCard 
+                    name="TikTok" 
+                    icon={<TikTokLogo className="w-5 h-5" />} 
+                    connected={!!user?.connections?.tiktok?.connected} 
+                    onClick={() => startOAuth('/api/auth/tiktok/login')}
+                  />
+                  <PlatformCard 
+                    name="Instagram" 
+                    icon={<Instagram size={20} className="text-pink-600" />} 
+                    connected={!!user?.connections?.instagram?.connected} 
+                    onClick={() => startOAuth('/api/auth/meta/login')}
+                  />
+                  <PlatformCard 
+                    name="Threads" 
+                    icon={<ThreadsLogo className="w-5 h-5" />} 
+                    connected={!!user?.connections?.threads?.connected} 
+                    onClick={() => startOAuth('/api/auth/threads/login')}
+                  />
+                  <PlatformCard 
                     name="Facebook" 
-                    icon={<Facebook className="text-blue-600" />} 
+                    icon={<Facebook size={20} className="text-blue-600" />} 
                     connected={!!user?.connections?.facebook?.connected} 
                     onClick={() => startOAuth('/api/auth/meta/login')}
                   />
                   <PlatformCard 
                     name="LinkedIn" 
-                    icon={<Linkedin className="text-blue-700" />} 
+                    icon={<Linkedin size={20} className="text-blue-700" />} 
                     connected={!!user?.connections?.linkedin?.connected} 
                     onClick={() => startOAuth('/api/auth/linkedin/login')}
                   />
                   <PlatformCard 
                     name="Reddit" 
-                    icon={<MessageSquare className="text-orange-600" />} 
+                    icon={<MessageSquare size={20} className="text-orange-600" />} 
                     connected={!!user?.connections?.reddit?.connected} 
                     onClick={() => startOAuth('/api/auth/reddit/login')}
                     onDisconnect={() => handleDisconnectAction('reddit')}
@@ -442,7 +453,7 @@ export default function DashboardPage() {
 
               {/* Workforce */}
               <section className="mb-12">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Agent Workforce</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Agent Control Center</h3>
                 <AgentBannerGrid 
                   statuses={agentStatuses}
                   onAgentClick={(agent) => {
@@ -451,7 +462,7 @@ export default function DashboardPage() {
                       setSelectedJobId(targetJob.id);
                       setActiveAgentLog(agent);
                     } else {
-                      alert('먼저 Job을 생성해주세요!');
+                      alert('연동할 데이터가 없습니다. 먼저 새 프로젝트(New Job)를 생성해주세요!');
                     }
                   }}
                 />
@@ -460,15 +471,15 @@ export default function DashboardPage() {
               {/* Jobs */}
               <section>
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Current Productions</h3>
-                  <Button variant="primary" icon={<Plus size={18} />} onClick={() => router.push('/jobs/new')}>New Job</Button>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Active Productions</h3>
+                  <Button variant="primary" icon={<Plus size={18} />} onClick={() => router.push('/jobs/new')}>New Project</Button>
                 </div>
 
                 {jobs.length === 0 ? (
-                  <GlassCard className="text-center py-20 border-dashed border-2 bg-slate-50/50">
-                    <LayoutGrid size={48} className="mx-auto text-slate-300 mb-4 opacity-50" />
-                    <p className="text-slate-500 font-medium mb-6">No productions found.</p>
-                    <Button onClick={() => router.push('/jobs/new')}>Start First Stream</Button>
+                  <GlassCard className="text-center py-20 border-dashed border-2 bg-slate-50/50 dark:bg-slate-900/20">
+                    <LayoutGrid size={48} className="mx-auto text-slate-300 dark:text-slate-700 mb-4 opacity-50" />
+                    <p className="text-slate-500 dark:text-slate-400 font-medium mb-6">No productions currently running.</p>
+                    <Button onClick={() => router.push('/jobs/new')}>Start First Pipeline</Button>
                   </GlassCard>
                 ) : (
                   <div className="grid gap-4">
@@ -480,17 +491,17 @@ export default function DashboardPage() {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
-                            <div className={`w-2 h-2 rounded-full ${job.state === 'DONE' ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
+                            <div className={`w-2.5 h-2.5 rounded-full ${job.state === 'DONE' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-amber-500 animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.5)]'}`} />
                             <div>
                                 <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-amber-600 transition-colors truncate max-w-[200px] md:max-w-md">
                                   {job?.topic || 'Untitled Production'}
                                 </h4>
-                                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter mt-1">
+                                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">
                                   {job?.scheduledAt ? new Date(job.scheduledAt).toLocaleString() : 'Scheduling...'}
                                 </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-4">
                             <button
                               onClick={(e) => handleDeleteJob(e, job.id)}
                               className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"

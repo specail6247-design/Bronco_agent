@@ -1,58 +1,37 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { Zap } from 'lucide-react';
-import ClientOnly from '@/components/ClientOnly';
-import Footer from '@/components/Footer';
+import { onAuthChange } from '@/lib/firebase/auth';
 
 export default function Home() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Check if user is logged in, redirect accordingly
-    const timer = setTimeout(() => {
-      router.push('/login');
-    }, 500);
+    setMounted(true);
+    // Instant auth check for maximum speed
+    const unsubscribe = onAuthChange((user) => {
+      if (user) {
+        router.replace('/dashboard');
+      } else {
+        router.replace('/login');
+      }
+    });
 
-    return () => clearTimeout(timer);
+    return () => unsubscribe();
   }, [router]);
 
+  if (!mounted) return null;
+
   return (
-    <ClientOnly>
-      <main 
-        className="min-h-screen flex items-center justify-center p-6 notranslate"
-        translate="no"
-        suppressHydrationWarning={true}
-      >
-        <div className="text-center">
-          {/* Logo */}
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 mb-6">
-            <Zap size={40} className="text-white" />
-          </div>
-
-          <h1 className="heading-display text-4xl md:text-5xl text-slate-800 mb-4">
-            <span>Bronco</span>
-          </h1>
-          <p className="text-lg text-slate-600 mb-8">
-            <span>Digital Nomad Agent Team</span>
-          </p>
-
-          {/* Loading indicator */}
-          <div className="flex justify-center gap-1">
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"
-                style={{ animationDelay: `${i * 0.15}s` }}
-              />
-            ))}
-          </div>
-
-          <Footer />
+    <main className="min-h-screen flex items-center justify-center bg-slate-950">
+      <div className="flex flex-col items-center gap-6">
+        <div className="w-12 h-12 border-4 border-amber-400 border-t-transparent rounded-full animate-spin shadow-[0_0_20px_rgba(251,191,36,0.2)]" />
+        <div className="text-amber-400/40 font-black tracking-[0.3em] text-[10px] uppercase animate-pulse">
+          Bronco Pipeline Initializing
         </div>
-      </main>
-    </ClientOnly>
+      </div>
+    </main>
   );
 }
