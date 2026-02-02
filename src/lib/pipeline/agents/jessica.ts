@@ -12,8 +12,14 @@ export async function jessica(context: AgentContext): Promise<AgentResult> {
     await logActivity(jobId, 'jessica', 'THOUGHT', `Analyzing trending topics for "${topic}"`);
     
     // 1. Get real search results
-    await logActivity(jobId, 'jessica', 'ACTION', `Searching Google for real-world data on ${topic}`);
+    await logActivity(jobId, 'jessica', 'ACTION', `Searching Google (SERPER) for latest trends on "${topic}"...`);
     const searchResults = await searchGoogle(topic);
+    
+    if (!searchResults || searchResults.length === 0) {
+      await logActivity(jobId, 'jessica', 'THOUGHT', `No direct search results found. Jessica will proceed using her internal knowledge base.`);
+    } else {
+      await logActivity(jobId, 'jessica', 'THOUGHT', `Found ${searchResults.length} relevant articles/videos. Synthesizing data...`);
+    }
     
     const searchSnippet = searchResults
       .slice(0, 5)
@@ -38,9 +44,10 @@ export async function jessica(context: AgentContext): Promise<AgentResult> {
       - competitorAngles: An array of 3 unique angles competitors are taking.
     `;
 
+    await logActivity(jobId, 'jessica', 'ACTION', `Analyzing data with Gemini-1.5-Flash...`);
     const analysis = await askGemini(prompt, true);
     
-    await logActivity(jobId, 'jessica', 'RESULT', `Research finalized. Found ${analysis.keywords?.length || 0} trending keywords.`);
+    await logActivity(jobId, 'jessica', 'RESULT', `Research complete! Extracted ${analysis.keywords?.length || 0} viral keywords and CTR-optimized angles.`);
 
     return {
       success: true,
