@@ -178,22 +178,26 @@ export default function DashboardPage() {
 
   // Poll step statuses for the selected job
   useEffect(() => {
+    let interval: NodeJS.Timeout;
     if (!selectedJobId) return;
 
     const fetchStatuses = async () => {
-      if (!selectedJobId) return;
       try {
         const res = await fetch(`/api/jobs/${selectedJobId}`);
         if (res.ok) {
           const data = await res.json();
           if (data?.steps) {
-            const newStatuses = { ...agentStatuses };
-            data.steps.forEach((step: any) => {
-              if (step?.stepName) {
-                newStatuses[step.stepName as AgentName] = step.state || 'WAITING';
-              }
+            setAgentStatuses(prev => {
+              const nextStatuses = { ...prev };
+              let changed = false;
+              data.steps.forEach((step: any) => {
+                if (step?.stepName && nextStatuses[step.stepName as AgentName] !== step.state) {
+                  nextStatuses[step.stepName as AgentName] = step.state || 'WAITING';
+                  changed = true;
+                }
+              });
+              return changed ? nextStatuses : prev;
             });
-            setAgentStatuses(newStatuses);
           }
         }
       } catch (err) {
@@ -202,14 +206,18 @@ export default function DashboardPage() {
     };
 
     fetchStatuses();
-    const interval = setInterval(fetchStatuses, 5000);
+    interval = setInterval(fetchStatuses, 5000);
     return () => clearInterval(interval);
   }, [selectedJobId]);
 
   // Automatically select the most recent job
+  // Fix: Added strict ID check to prevent React Error #185 (Maximum update depth)
   useEffect(() => {
     if (jobs.length > 0 && !selectedJobId) {
-      setSelectedJobId(jobs[0].id);
+      const firstJobId = jobs[0].id;
+      if (firstJobId && typeof firstJobId === 'string') {
+        setSelectedJobId(firstJobId);
+      }
     }
   }, [jobs, selectedJobId]);
 
@@ -507,7 +515,7 @@ export default function DashboardPage() {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
-                            <div className={`w-2.5 h-2.5 rounded-full ${job.state === 'DONE' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-amber-500 animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.5)]'}`} />
+                            <div className={`w-2.5 h-2.5 rounded-full ${job.state === 'DONE' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,180,120,0.5)]' : 'bg-amber-500 animate-pulse shadow-[0_0_10px_#f59e0b80]'}`} />
                             <div>
                                 <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-amber-600 transition-colors truncate max-w-[200px] md:max-w-md">
                                   {job?.topic || 'Untitled Production'}
