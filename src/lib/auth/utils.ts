@@ -7,8 +7,15 @@ import { CONFIG } from '@/lib/config';
  * 2. No trailing slash bugs
  * 3. Uniform path pattern: /api/auth/[platform]/callback
  */
-export function getStandardRedirectUri(platform: string): string {
-  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || CONFIG.APP_URL || '').replace(/\/$/, "");
+export function getStandardRedirectUri(platform: string, baseUrlOverride?: string): string {
+  if (platform === 'youtube') {
+    const youtubeOverride = process.env.YOUTUBE_REDIRECT_URI || process.env.NEXT_PUBLIC_YOUTUBE_REDIRECT_URI;
+    if (youtubeOverride) {
+      return youtubeOverride.replace(/\/$/, "");
+    }
+  }
+
+  const baseUrl = (baseUrlOverride || process.env.NEXT_PUBLIC_APP_URL || CONFIG.APP_URL || '').replace(/\/$/, "");
   
   // YouTube, TikTok, and Meta were originally registered with the 'callback/platform' pattern.
   // We revert to this pattern specifically for these platforms to avoid Console Mismatch errors.

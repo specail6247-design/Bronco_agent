@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import { getYouTubeOAuthClient } from '@/lib/auth/youtube';
 import { getAdminDb } from '@/lib/firebase/admin';
+import { CONFIG } from '@/lib/config';
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,7 +16,12 @@ export async function GET(req: NextRequest) {
       return new NextResponse('Invalid callback parameters', { status: 400 });
     }
 
-    const client = getYouTubeOAuthClient();
+    const host = req.headers.get('x-forwarded-host') || req.headers.get('host');
+    const protocol = req.headers.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
+    const dynamicUrl = host ? `${protocol}://${host}` : undefined;
+    const appUrl = dynamicUrl || process.env.NEXT_PUBLIC_APP_URL || CONFIG.APP_URL;
+
+    const client = getYouTubeOAuthClient(appUrl);
     const { tokens } = await client.getToken(code);
     client.setCredentials(tokens);
 
@@ -83,9 +89,9 @@ export async function GET(req: NextRequest) {
       }
     }, { merge: true });
 
-    const host = req.headers.get('host');
-    const protocol = host?.includes('localhost') ? 'http' : 'https';
-    return NextResponse.redirect(`${protocol}://${host}/dashboard?youtube=success`);
+    const redirectHost = req.headers.get('x-forwarded-host') || req.headers.get('host');
+    const redirectProtocol = req.headers.get('x-forwarded-proto') || (redirectHost?.includes('localhost') ? 'http' : 'https');
+    return NextResponse.redirect(`${redirectProtocol}://${redirectHost}/dashboard?youtube=success`);
 
   } catch (error) {
     console.error('YouTube Auth Callback Error:', error);

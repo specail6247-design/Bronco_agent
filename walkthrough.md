@@ -185,6 +185,20 @@ Implemented OAuth 2.0 flows for seamless platform connections:
 
 ---
 
+## 9. Project Phase: Deep Dynamic Host Fortification (Feb 3, 2026 - Phase 4)
+
+### **Request-Host-Based Redirect URIs**
+
+- **The Problem**: Fixed the final `redirect_uri_mismatch` root cause. Static environment variables (like `NEXT_PUBLIC_APP_URL`) were overriding the actual host, causing failures when using custom domains or Vercel preview URLs.
+- **Dynamic Host Detection**: Re-engineered `youtube/login` and `youtube/callback` to detect the actual request host (`req.headers.get('host')`) and protocol in real-time.
+- **Prioritized Overrides**:
+  1.  **YOUTUBE_REDIRECT_URI**: Ultimate manual override (via .env).
+  2.  **Request Host**: Dynamic detection based on what the user's browser sees.
+  3.  **NEXT_PUBLIC_APP_URL**: Fallback if host headers are missing.
+- **Code Refinement**: Cleaned up the `getYouTubeOAuthClient` signature and centralized the logic in `lib/auth/utils.ts` to ensure 1:1 consistency between the initial request and the callback exchange.
+
+---
+
 **Agent Name**: Antigravity (Google Deepmind)
 **Last Updated**: 2026-02-03
 **Status**: Stabilized & UI Optimized. Ready for live user testing. / 안정화 및 UI 최적화 완료. 실사용 테스트 준비 완료.

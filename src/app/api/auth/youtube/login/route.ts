@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getYouTubeOAuthClient, YOUTUBE_SCOPES } from '@/lib/auth/youtube';
+import { CONFIG } from '@/lib/config';
 
 export async function GET(req: NextRequest) {
   try {
@@ -11,7 +12,14 @@ export async function GET(req: NextRequest) {
       return new NextResponse('Missing UID', { status: 400 });
     }
 
-    const client = getYouTubeOAuthClient();
+    const host = req.headers.get('x-forwarded-host') || req.headers.get('host');
+    const protocol = req.headers.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
+    const dynamicUrl = host ? `${protocol}://${host}` : undefined;
+    
+    // Prioritize the actual host being visited, then fall back to env vars
+    const appUrl = dynamicUrl || process.env.NEXT_PUBLIC_APP_URL || CONFIG.APP_URL;
+
+    const client = getYouTubeOAuthClient(appUrl);
     
     // Auth URL 생성 (사용자가 로그인 후 돌아올 때 uid를 상태값으로 전달)
     const url = client.generateAuthUrl({
