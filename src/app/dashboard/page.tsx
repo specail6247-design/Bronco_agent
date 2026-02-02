@@ -14,7 +14,6 @@ import {
   Check,
   Twitter,
   Music,
-  LogOut as Music2, // Fallback if Music2 is not found, or use Music
   AtSign,
   LayoutGrid,
   Hash,
@@ -25,6 +24,8 @@ import {
   Sun,
   Trash2
 } from 'lucide-react';
+
+const Music2 = Music; // Define a fallback or use another icon
 import { 
   GlassCard, 
   LabelCard, 
@@ -222,9 +223,8 @@ export default function DashboardPage() {
     document.documentElement.classList.toggle('dark');
   };
 
-  if (!mounted) return null;
-
   // Calculate connected count reliably
+  // HOOKS MUST BE CALLED BEFORE CONDITIONAL RETURNS
   const connectedCount = useMemo(() => {
     if (!mounted || !user) return 0;
     const connections = user.connections || {};
@@ -235,6 +235,8 @@ export default function DashboardPage() {
     });
     return connectedPlatforms.length;
   }, [mounted, user]);
+
+  if (!mounted) return null;
 
   async function handleSignOut() {
     await signOut();
