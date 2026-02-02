@@ -81,59 +81,75 @@ function PlatformCard({
 
   return (
     <GlassCard 
-      className={`p-5 border border-slate-100 dark:border-slate-800 hover:border-amber-300 dark:hover:border-amber-400 transition-all group bg-white dark:bg-slate-900 shadow-sm hover:shadow-md hover:-translate-y-1 ${onClick ? 'cursor-pointer' : ''}`} 
-      onClick={onClick}
-      hover
-      role={onClick ? 'button' : undefined}
-      tabIndex={onClick ? 0 : undefined}
+      className={`p-5 border border-slate-100 dark:border-slate-800/50 hover:border-amber-400 transitions-all group bg-white dark:bg-slate-900 shadow-sm hover:shadow-xl hover:-translate-y-1 ${onClick && !connected ? 'cursor-pointer' : ''}`} 
+      onClick={!connected ? onClick : undefined}
+      hover={!connected}
+      role={onClick && !connected ? 'button' : undefined}
+      tabIndex={onClick && !connected ? 0 : undefined}
       onKeyDown={handleKeyDown}
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg group-hover:bg-amber-100 dark:group-hover:bg-amber-900/40 transition-all overflow-hidden w-10 h-10 flex items-center justify-center">
+      <div className="flex items-start justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-white rounded-xl shadow-inner flex items-center justify-center overflow-hidden flex-shrink-0 border border-slate-100">
             {thumbnail ? (
-              <img src={thumbnail} alt={name} className="w-full h-full rounded-full object-cover shadow-sm" />
+              <img src={thumbnail} alt={name} className="w-full h-full object-cover" />
             ) : (
-              <div className="text-slate-800 dark:text-slate-100">
+              <div className="scale-110">
                 {icon}
               </div>
             )}
           </div>
           <div className="overflow-hidden">
-            <span className="font-bold text-slate-800 dark:text-slate-100 block truncate">{channelName || name}</span>
-            {connected && <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider">Sync Active</span>}
+            <h4 className="font-extrabold text-slate-900 dark:text-white text-lg tracking-tight truncate leading-tight">
+              {channelName || name}
+            </h4>
+            {connected && (
+              <p className="text-[11px] text-emerald-500 font-black uppercase tracking-[0.15em] mt-1.5 glow-emerald">
+                Sync Active
+              </p>
+            )}
           </div>
         </div>
+        
         {connected && (
-          <div className="p-1 bg-emerald-50 dark:bg-emerald-900/20 rounded-full">
-            <Check size={14} className="text-emerald-500" />
+          <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-lg">
+            <Check size={14} className="text-white" strokeWidth={4} />
           </div>
         )}
       </div>
-      <div className="flex gap-2">
-        <Button 
-          variant={connected ? "ghost" : "secondary"} 
-          size="sm" 
-          className={`flex-1 text-[10px] font-black uppercase tracking-widest ${connected ? 'text-slate-400' : 'bg-slate-900 text-white dark:bg-amber-400 dark:text-slate-900 shadow-lg'}`}
-          onClick={(event) => {
-            event.stopPropagation();
-            onClick?.();
-          }}
-        >
-          {connected ? "Manage" : "Connect Now"}
-        </Button>
-        {connected && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-            onClick={(event) => {
-              event.stopPropagation();
-              onDisconnect?.();
+
+      <div className="flex items-center gap-2 mt-2">
+        {!connected ? (
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              onClick?.();
             }}
+            className="w-full py-3 bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold text-[11px] uppercase tracking-[0.25em] rounded-2xl shadow-[0_8px_20px_-6px_rgba(251,191,36,0.6)] hover:shadow-[0_12px_25px_-6px_rgba(251,191,36,0.8)] transform hover:-translate-y-1 active:translate-y-0.5 transition-all border-2 border-white/40 flex items-center justify-center"
           >
-            Disconnect
-          </Button>
+            Connect Now
+          </button>
+        ) : (
+          <div className="flex w-full items-center justify-between px-1">
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                onClick?.();
+              }}
+              className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-slate-900 dark:text-slate-500 dark:hover:text-emerald-400 transition-all font-outfit"
+            >
+              Manage
+            </button>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                onDisconnect?.();
+              }}
+              className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-all font-outfit"
+            >
+              Disconnect
+            </button>
+          </div>
         )}
       </div>
     </GlassCard>
