@@ -185,20 +185,21 @@ Implemented OAuth 2.0 flows for seamless platform connections:
 
 ---
 
-## 9. Project Phase: Deep Dynamic Host Fortification (Feb 3, 2026 - Phase 4)
+## 9. Project Phase: Deep Dynamic Host & Reactivity (Feb 3, 2026 - Phase 4 & 5)
 
-### **Request-Host-Based Redirect URIs**
+### **The Final OAuth Victory**
 
-- **The Problem**: Fixed the final `redirect_uri_mismatch` root cause. Static environment variables (like `NEXT_PUBLIC_APP_URL`) were overriding the actual host, causing failures when using custom domains or Vercel preview URLs.
-- **Dynamic Host Detection**: Re-engineered `youtube/login` and `youtube/callback` to detect the actual request host (`req.headers.get('host')`) and protocol in real-time.
-- **Prioritized Overrides**:
-  1.  **YOUTUBE_REDIRECT_URI**: Ultimate manual override (via .env).
-  2.  **Request Host**: Dynamic detection based on what the user's browser sees.
-  3.  **NEXT_PUBLIC_APP_URL**: Fallback if host headers are missing.
-- **Code Refinement**: Cleaned up the `getYouTubeOAuthClient` signature and centralized the logic in `lib/auth/utils.ts` to ensure 1:1 consistency between the initial request and the callback exchange.
+- **The Problem**: Discovered that dynamic host detection (Phase 4) was too volatile for Google Console. Even a 1-character difference in Vercel preview URLs caused `400: redirect_uri_mismatch`.
+- **The Solution (Phase 5)**:
+  1. **Production Lock**: Hard-locked OAuth to `https://bronco-agent.vercel.app` for production cases, ensuring 100% match with Google Cloud Console.
+  2. **Reactivity Fix**: Implemented `useSearchParams` and `cache-busting` in the Dashboard. The app now immediately detects successful OAuth returns and fetches fresh user data from Firestore within 1-2 seconds.
+  3. **Sync Active Badge**: Refined the logic to ensure the "Sync Active" status appears immediately without requiring a manual page refresh (Cmd+R).
 
 ---
 
 **Agent Name**: Antigravity (Google Deepmind)
-**Last Updated**: 2026-02-03
-**Status**: Stabilized & UI Optimized. Ready for live user testing. / 안정화 및 UI 최적화 완료. 실사용 테스트 준비 완료.
+**Last Updated**: 2026-02-03 02:40 AM (Final Stabilization)
+**Status**: **DEPLOYMENT STABLE**. YouTube, X, and TikTok connections verified. Ready for full automation workforce.
+
+- **Current Version**: `v1.0.3-FEB03-P5`
+- **Known Rule**: Always prioritize `NEXT_PUBLIC_APP_URL` or `CONFIG.APP_URL` for OAuth to match Google Console whitelist. Avoid using dynamic request headers for the final redirect URI to prevent mismatches.
