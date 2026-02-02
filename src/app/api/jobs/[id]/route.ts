@@ -15,24 +15,31 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     try {
       const jobDoc = await adminDb.collection('jobs').doc(id).get();
       if (jobDoc.exists) {
-        const d = jobDoc.data();
+        const d = jobDoc.data() || {};
         jobData = { 
           id: jobDoc.id, 
           ...d,
+          topic: d.topic || 'Unknown Topic',
+          state: d.state || 'WAITING',
           scheduledAt: d?.scheduledAt?.toDate ? d.scheduledAt.toDate().toISOString() : d?.scheduledAt || new Date().toISOString(),
           createdAt: d?.createdAt?.toDate ? d.createdAt.toDate().toISOString() : d?.createdAt || new Date().toISOString(),
           updatedAt: d?.updatedAt?.toDate ? d.updatedAt.toDate().toISOString() : d?.updatedAt || new Date().toISOString(),
         };
 
         const stepsSnap = await adminDb.collection('job_steps').where('jobId', '==', id).get();
-        stepsData = stepsSnap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+        stepsData = stepsSnap.docs.map((doc: any) => ({ 
+          id: doc.id, 
+          ...doc.data(),
+          state: doc.data()?.state || 'WAITING',
+          stepName: doc.data()?.stepName || 'unknown'
+        }));
 
         const artifactsSnap = await adminDb.collection('artifacts')
           .where('jobId', '==', id)
-          .limit(10)
+          .limit(20)
           .get();
         artifactsData = artifactsSnap.docs.map((doc: any) => {
-          const ad = doc.data();
+          const ad = doc.data() || {};
           return { 
             id: doc.id, 
             ...ad,
@@ -41,9 +48,15 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         });
 
         return NextResponse.json({ job: jobData, steps: stepsData, artifacts: artifactsData });
+      } else {
+        // If it specifically does not exist and it's not a numeric ID, return 404
+        if (!['1', '2', '3'].includes(id)) {
+           return new NextResponse(JSON.stringify({ error: 'Job not found' }), { status: 404 });
+        }
       }
-    } catch (dbError) {
-      console.error('Database fetch failed, falling back to mock:', dbError);
+    } catch (dbError: any) {
+      console.error('Database fetch failed:', dbError);
+      return new NextResponse(JSON.stringify({ error: 'Database Error', details: dbError?.message }), { status: 500 });
     }
 
     // FALLBACK

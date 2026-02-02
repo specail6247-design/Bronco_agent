@@ -12,18 +12,23 @@ export async function POST(req: NextRequest) {
     const ownerId = userId || 'user1'; 
 
     if (!topic || !platforms || !scheduledAt) {
-      return new NextResponse('Missing required fields', { status: 400 });
+      return new NextResponse(JSON.stringify({ error: 'Missing required fields' }), { status: 400 });
+    }
+
+    // Defensive check: Validate platforms array
+    if (!Array.isArray(platforms) || platforms.length === 0) {
+      return new NextResponse(JSON.stringify({ error: 'Platforms must be a non-empty array' }), { status: 400 });
     }
 
     // 1. Create the Main Job
     const jobData = {
       ownerId,
-      topic,
+      topic: topic.slice(0, 500), // Prevent overflow
       platforms,
       languageMode: languageMode || 'auto',
       preferredLanguage: preferredLanguage || null,
       scheduledAt: new Date(scheduledAt),
-      state: 'RUNNING', // Start in RUNNING state
+      state: 'RUNNING',
       retryCount: 0,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -50,16 +55,18 @@ export async function POST(req: NextRequest) {
     await batch.commit();
 
     // 3. Trigger Pipeline
-    const { runPipeline } = await import('@/lib/pipeline/engine');
-    const jobObject = { id: jobId, ...jobData } as any;
-    
-    // Trigger and log errors but don't block
-    runPipeline(jobObject).catch(e => console.error('[Pipeline Error]:', e));
+    try {
+      const { runPipeline } = await import('@/lib/pipeline/engine');
+      const jobObject = { id: jobId, ...jobData } as any;
+      runPipeline(jobObject).catch(e => console.error('[Pipeline Error]:', e));
+    } catch (importErr) {
+      console.error('Failed to trigger pipeline:', importErr);
+    }
 
     return NextResponse.json({ id: jobId, ...jobData });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating job:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return new NextResponse(JSON.stringify({ error: 'Internal Server Error', details: error?.message }), { status: 500 });
   }
 }
 
@@ -71,17 +78,20 @@ export async function GET(req: NextRequest) {
 
     let query: any = adminDb.collection('jobs');
     
-    if (userId) {
+    if (userId && userId !== 'undefined') {
       query = query.where('ownerId', '==', userId);
     }
 
-    const jobsSnap = await query.limit(50).get();
+    const jobsSnap = await query.orderBy('createdAt', 'desc').limit(50).get();
       
     const jobs = jobsSnap.docs.map((doc: any) => {
       const data = doc.data();
       return { 
         id: doc.id, 
         ...data,
+        topic: data.topic || 'Untitled Job',
+        state: data.state || 'WAITING',
+        platforms: data.platforms || [],
         scheduledAt: data.scheduledAt && data.scheduledAt.toDate ? data.scheduledAt.toDate().toISOString() : (data.scheduledAt || new Date().toISOString()),
         createdAt: data.createdAt && data.createdAt.toDate ? data.createdAt.toDate().toISOString() : (data.createdAt || new Date().toISOString()),
         updatedAt: data.updatedAt && data.updatedAt.toDate ? data.updatedAt.toDate().toISOString() : (data.updatedAt || new Date().toISOString()),
@@ -89,8 +99,8 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json({ jobs });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching jobs:', error);
-    return NextResponse.json({ jobs: [] });
+    return NextResponse.json({ jobs: [], error: error?.message });
   }
 }

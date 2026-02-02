@@ -66,10 +66,9 @@ export function ActivityLog({ agentName, jobId, isOpen, onClose, status }: Activ
     setLoading(true);
     try {
       const res = await fetch(`/api/jobs/${jobId}/logs?agentName=${agentName}`);
-      if (res.ok) {
-        const data = await res.json();
-        setLogs(data.logs || []);
-      }
+      if (!res.ok) throw new Error(`API error: ${res.status}`);
+      const data = await res.json();
+      setLogs(data.logs || []);
     } catch (e) {
       console.error('Failed to fetch activity logs:', e);
     } finally {

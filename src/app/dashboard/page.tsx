@@ -60,14 +60,17 @@ export default function DashboardPage() {
     if (!selectedJobId) return;
 
     const fetchStatuses = async () => {
+      if (!selectedJobId) return;
       try {
         const res = await fetch(`/api/jobs/${selectedJobId}`);
         if (res.ok) {
           const data = await res.json();
-          if (data.steps) {
+          if (data?.steps) {
             const newStatuses = { ...agentStatuses };
             data.steps.forEach((step: any) => {
-              newStatuses[step.stepName as AgentName] = step.state;
+              if (step?.stepName) {
+                newStatuses[step.stepName as AgentName] = step.state || 'WAITING';
+              }
             });
             setAgentStatuses(newStatuses);
           }
@@ -379,8 +382,12 @@ export default function DashboardPage() {
                           <div className="flex items-center gap-4">
                             <div className={`w-2 h-2 rounded-full ${job.state === 'DONE' ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
                             <div>
-                              <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-amber-600 transition-colors">{job?.topic || 'Untitled'}</h4>
-                              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter mt-1">{job?.scheduledAt ? new Date(job.scheduledAt).toLocaleString() : 'No Date'}</p>
+                                <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-amber-600 transition-colors truncate max-w-[200px] md:max-w-md">
+                                  {job?.topic || 'Untitled Production'}
+                                </h4>
+                                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter mt-1">
+                                  {job?.scheduledAt ? new Date(job.scheduledAt).toLocaleString() : 'Scheduling...'}
+                                </p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">

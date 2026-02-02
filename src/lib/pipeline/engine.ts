@@ -25,11 +25,46 @@ const PIPELINE_ORDER: AgentName[] = ['jessica', 'sunny', 'rovert', 'tim', 'david
  * This should be idempotent and recover from failures.
  */
 export async function runPipeline(job: Job) {
-  console.log(`[Pipeline] Running for job ${job.id}`);
+  if (!job || !job.id) {
+    console.error('[Pipeline] Aborting: Missing job ID');
+    return;
+  }
+
+  console.log(`[Pipeline] Starting pipeline for job: ${job.id}`);
   const adminDb = getAdminDb();
   
+  try {
+    // 1. Get steps for this job
+    const stepsSnap = await adminDb.collection('job_steps')
+      .where('jobId', '==', job.id)
+      .get();
+    
+    if (stepsSnap.empty) {
+      console.error(`[Pipeline] No steps found for job ${job.id}. Attempting to initialize...`);
+      // Initial recovery if steps are missing
+      const agents: AgentName[] = ['jessica', 'sunny', 'rovert', 'tim', 'david', 'john'];
+      const batch = adminDb.batch();
+      agents.forEach((agent) => {
+        const stepRef = adminDb.collection('job_steps').doc();
+        batch.set(stepRef, {
+          jobId: job.id,
+          stepName: agent,
+          state: agent === 'jessica' ? 'WORKING' : 'WAITING',
+          updatedAt: new Date(),
+          createdAt: new Date(),
+        });
+      });
+      await batch.commit();
+      // Re-fetch steps
+      return runPipeline(job);
+    }
+  } catch (initialErr) {
+    console.error('[Pipeline] Initial fetch failed:', initialErr);
+    return;
+  }
+  
   // Ensure job is in RUNNING state
-  if (job.state === 'SCHEDULED') {
+  if (job.state === 'SCHEDULED' || job.state === 'PAUSED') {
     await adminDb.collection('jobs').doc(job.id).update({ state: 'RUNNING', updatedAt: new Date() });
   }
 
