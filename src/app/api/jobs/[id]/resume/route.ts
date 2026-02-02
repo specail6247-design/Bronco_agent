@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
+import { waitUntil } from '@vercel/functions'; 
 import { getAdminDb } from '@/lib/firebase/admin';
 import { runPipeline } from '@/lib/pipeline/engine';
 
@@ -35,9 +36,9 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       job.state = 'RUNNING';
     }
 
-    // 3. Trigger Pipeline (Background execution warning: Vercel might cut this off)
-    // In a production environment, this should ideally be handled by a queue trigger.
-    runPipeline(job).catch(e => console.error('[Resume Error]:', e));
+    // 3. Trigger Pipeline with waitUntil to prevent premature termination
+    // This allows the serverless function to stay alive until the pipeline finishes
+    waitUntil(runPipeline(job).catch(e => console.error('[Resume Error]:', e)));
 
     return NextResponse.json({ 
       success: true, 
