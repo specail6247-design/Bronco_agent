@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, type ReactNode, type KeyboardEvent } from 'react';
+import { useState, useEffect, useMemo, useCallback, type ReactNode, type KeyboardEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Plus, 
@@ -221,37 +221,37 @@ export default function DashboardPage() {
     }
   }, [jobs, selectedJobId]);
 
+  const fetchJobs = useCallback(async (userIdStr?: string) => {
+    try {
+      const url = userIdStr ? `/api/jobs?userId=${userIdStr}` : '/api/jobs';
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setJobs(data.jobs || []);
+      }
+    } catch (e) {
+      console.error('Job fetch error:', e);
+    }
+  }, []);
+
+  const buildFallbackUser = useCallback((firebaseUser: { uid: string; email?: string | null }) => {
+    const email = firebaseUser.email || '';
+    const isOwner = ownerEmail && email.toLowerCase() === ownerEmail.toLowerCase();
+    return {
+      id: firebaseUser.uid,
+      email,
+      role: isOwner ? 'OWNER' : 'MEMBER',
+      allowedAgents: isOwner
+        ? ['jessica', 'sunny', 'rovert', 'tim', 'david', 'john']
+        : ['jessica', 'sunny'],
+      expiryAt: null,
+      createdAt: new Date(),
+      connections: {}
+    } as User;
+  }, [ownerEmail]);
+
   useEffect(() => {
     setMounted(true);
-
-    const fetchJobs = async (userIdStr?: string) => {
-      try {
-        const url = userIdStr ? `/api/jobs?userId=${userIdStr}` : '/api/jobs';
-        const res = await fetch(url);
-        if (res.ok) {
-          const data = await res.json();
-          setJobs(data.jobs || []);
-        }
-      } catch (e) {
-        console.error('Job fetch error:', e);
-      }
-    };
-
-    const buildFallbackUser = (firebaseUser: { uid: string; email?: string | null }) => {
-      const email = firebaseUser.email || '';
-      const isOwner = ownerEmail && email.toLowerCase() === ownerEmail.toLowerCase();
-      return {
-        id: firebaseUser.uid,
-        email,
-        role: isOwner ? 'OWNER' : 'MEMBER',
-        allowedAgents: isOwner
-          ? ['jessica', 'sunny', 'rovert', 'tim', 'david', 'john']
-          : ['jessica', 'sunny'],
-        expiryAt: null,
-        createdAt: new Date(),
-        connections: {}
-      } as User;
-    };
 
     const unsubscribe = onAuthChange(async (firebaseUser) => {
       if (!firebaseUser) {
@@ -286,7 +286,7 @@ export default function DashboardPage() {
     });
 
     return () => unsubscribe();
-  }, [router, ownerEmail, buildFallbackUser]);
+  }, [router, ownerEmail, buildFallbackUser, fetchJobs]);
 
   // Handle themes separate from auth to avoid race
   useEffect(() => {
