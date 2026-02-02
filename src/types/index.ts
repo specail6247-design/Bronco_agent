@@ -68,6 +68,7 @@ export interface User {
       thumbnail?: string;
       subscriberCount?: string;
       updatedAt: any;
+      [key: string]: any; // Allow for platform-specific fields like 'username', 'name', etc.
     }
   };
   inviteKeyId?: string;

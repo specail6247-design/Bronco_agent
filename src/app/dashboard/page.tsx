@@ -90,11 +90,11 @@ function PlatformCard({
     >
       <div className="flex items-start justify-between mb-6">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-white rounded-xl shadow-inner flex items-center justify-center overflow-hidden flex-shrink-0 border border-slate-100">
+          <div className="w-12 h-12 bg-white rounded-xl shadow-inner flex items-center justify-center overflow-hidden flex-shrink-0 border border-slate-100 text-slate-900">
             {thumbnail ? (
               <img src={thumbnail} alt={name} className="w-full h-full object-cover" />
             ) : (
-              <div className="scale-110">
+              <div className="scale-110 flex items-center justify-center">
                 {icon}
               </div>
             )}
@@ -433,18 +433,21 @@ export default function DashboardPage() {
                     name="X" 
                     icon={<XLogo className="w-5 h-5" />} 
                     connected={!!user?.connections?.x?.connected} 
+                    channelName={user?.connections?.x?.name || user?.connections?.x?.username}
                     onClick={() => startOAuth('/api/auth/x/login')}
                   />
                   <PlatformCard 
                     name="TikTok" 
                     icon={<TikTokLogo className="w-5 h-5" />} 
                     connected={!!user?.connections?.tiktok?.connected} 
+                    channelName={user?.connections?.tiktok?.name}
                     onClick={() => startOAuth('/api/auth/tiktok/login')}
                   />
                   <PlatformCard 
                     name="Instagram" 
                     icon={<Instagram size={20} className="text-pink-600" />} 
                     connected={!!user?.connections?.instagram?.connected} 
+                    channelName={user?.connections?.instagram?.instagramAccount?.username}
                     onClick={() => startOAuth('/api/auth/meta/login')}
                   />
                   <PlatformCard 
@@ -463,12 +466,14 @@ export default function DashboardPage() {
                     name="LinkedIn" 
                     icon={<Linkedin size={20} className="text-blue-700" />} 
                     connected={!!user?.connections?.linkedin?.connected} 
+                    channelName={user?.connections?.linkedin?.name}
                     onClick={() => startOAuth('/api/auth/linkedin/login')}
                   />
                   <PlatformCard 
                     name="Reddit" 
                     icon={<MessageSquare size={20} className="text-orange-600" />} 
                     connected={!!user?.connections?.reddit?.connected} 
+                    channelName={user?.connections?.reddit?.name}
                     onClick={() => startOAuth('/api/auth/reddit/login')}
                     onDisconnect={() => handleDisconnectAction('reddit')}
                   />

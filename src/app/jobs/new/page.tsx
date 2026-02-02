@@ -57,7 +57,7 @@ export default function NewJobPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (platforms.length === 0) return;
+    if (loading || platforms.length === 0) return;
     setLoading(true);
 
     try {

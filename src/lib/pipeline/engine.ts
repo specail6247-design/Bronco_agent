@@ -132,6 +132,12 @@ export async function runPipeline(job: Job) {
 
       // Create or update step to WORKING
       let stepId = step?.id;
+      if (step?.state === 'WORKING') {
+        console.log(`[Pipeline] Step ${agentName} is already WORKING. Skipping to prevent double execution.`);
+        await logActivity(job.id, agentName as any, 'THOUGHT', `[#${attemptId}] Concurrent execution detected. Skipping redundant activation to prevent double work.`);
+        return; // Important: Don't just skip, exit this pipeline run to avoid overlapping
+      }
+
       if (!stepId) {
         const stepRef = adminDb.collection('job_steps').doc();
         stepId = stepRef.id;
@@ -143,7 +149,7 @@ export async function runPipeline(job: Job) {
           updatedAt: new Date(),
           createdAt: new Date(),
         });
-      } else if (step?.state !== 'WORKING') {
+      } else {
         await adminDb.collection('job_steps').doc(stepId).update({ 
           state: 'WORKING', 
           startedAt: new Date(), 
