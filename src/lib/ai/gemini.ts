@@ -17,8 +17,10 @@ export async function askGemini(prompt: string, jsonResponse = false) {
         return JSON.parse(jsonMatch[1] || jsonMatch[0]);
       } catch (e) {
         console.error("Failed to parse JSON from Gemini:", text);
-        return text;
+        throw new Error("Invalid JSON format received from AI");
       }
+    } else {
+      throw new Error("AI failed to provide a valid JSON response");
     }
   }
 

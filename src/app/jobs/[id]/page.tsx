@@ -15,8 +15,9 @@ export default function JobDetailPage() {
   const [job, setJob] = useState<any>(null);
   const [steps, setSteps] = useState<any[]>([]);
   const [artifacts, setArtifacts] = useState<any[]>([]);
-   const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [advancing, setAdvancing] = useState(false);
+  const [resuming, setResuming] = useState(false);
   const [selectedArtifact, setSelectedArtifact] = useState<any>(null);
   const [activeAgentLog, setActiveAgentLog] = useState<AgentName | null>(null);
 
@@ -48,8 +49,28 @@ export default function JobDetailPage() {
       if (res.ok) await fetchData(); // Reload data without full page refresh
     } catch (e) {
       console.error(e);
+      alert('Advance Step failed. Check console for details.');
     } finally {
       setAdvancing(false);
+    }
+  };
+
+  const handleResume = async () => {
+    if (!id) return;
+    setResuming(true);
+    try {
+      const res = await fetch(`/api/jobs/${id}/resume`, { method: 'POST' });
+      if (res.ok) {
+        alert('Agents have been waken up! They will resume from the last point.');
+        await fetchData();
+      } else {
+        alert('Failed to resume job.');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error during resume process.');
+    } finally {
+      setResuming(false);
     }
   };
 
@@ -106,6 +127,21 @@ export default function JobDetailPage() {
             >
               <Trash2 size={24} />
             </Button>
+            
+            {/* Resume Button - Visible if stuck or failed */}
+            {(currentJob.state === 'RUNNING' || currentJob.state === 'FAILED') && (
+              <button 
+                onClick={handleResume}
+                disabled={resuming || !id}
+                className={`
+                  px-6 py-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all
+                  ${resuming ? 'bg-slate-100 text-slate-400' : 'bg-slate-900 border border-slate-700 text-white hover:bg-slate-800'}
+                `}
+              >
+                {resuming ? "Waking agents..." : "Resume Job"}
+              </button>
+            )}
+
             <button 
               onClick={handleAdvance}
               disabled={advancing || !id}
