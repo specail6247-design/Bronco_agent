@@ -19,6 +19,7 @@ interface AgentInfo {
   icon: LucideIcon;
   color: string;
   bgGradient: string;
+  avatar: string;
 }
 
 const agentInfoMap: Record<AgentName, AgentInfo> = {
@@ -28,6 +29,7 @@ const agentInfoMap: Record<AgentName, AgentInfo> = {
     icon: Search,
     color: '#E8B4B8',
     bgGradient: 'from-rose-50 to-pink-50',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=256&h=256&auto=format&fit=crop'
   },
   sunny: {
     name: 'Sunny',
@@ -35,6 +37,7 @@ const agentInfoMap: Record<AgentName, AgentInfo> = {
     icon: FileText,
     color: '#FFD93D',
     bgGradient: 'from-amber-50 to-yellow-50',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=256&h=256&auto=format&fit=crop'
   },
   rovert: {
     name: 'Rovert',
@@ -42,6 +45,7 @@ const agentInfoMap: Record<AgentName, AgentInfo> = {
     icon: Film,
     color: '#6BCB77',
     bgGradient: 'from-emerald-50 to-green-50',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=256&h=256&auto=format&fit=crop'
   },
   tim: {
     name: 'Tim',
@@ -49,6 +53,7 @@ const agentInfoMap: Record<AgentName, AgentInfo> = {
     icon: Upload,
     color: '#4D96FF',
     bgGradient: 'from-blue-50 to-sky-50',
+    avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=256&h=256&auto=format&fit=crop'
   },
   david: {
     name: 'David',
@@ -56,6 +61,7 @@ const agentInfoMap: Record<AgentName, AgentInfo> = {
     icon: CheckCircle,
     color: '#9B59B6',
     bgGradient: 'from-purple-50 to-violet-50',
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=256&h=256&auto=format&fit=crop'
   },
   john: {
     name: 'John',
@@ -63,6 +69,7 @@ const agentInfoMap: Record<AgentName, AgentInfo> = {
     icon: BarChart3,
     color: '#34495E',
     bgGradient: 'from-slate-50 to-gray-50',
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=256&h=256&auto=format&fit=crop'
   },
 };
 
@@ -98,14 +105,11 @@ export function AgentBanner({ agent, status = 'WAITING', onClick, compact = fals
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div 
-          className="p-3 rounded-xl"
+          className="relative w-12 h-12 rounded-xl overflow-hidden shadow-inner border-2 border-white"
           style={{ backgroundColor: `${info.color}20` }}
         >
-          <Icon 
-            size={compact ? 24 : 32} 
-            style={{ color: info.color }}
-            strokeWidth={2}
-          />
+          <img src={info.avatar} alt={info.name} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-black/5" />
         </div>
         <StatusBadge status={status} />
       </div>

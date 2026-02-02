@@ -13,7 +13,9 @@ import {
   CheckCircle, 
   BarChart3,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  RotateCw,
+  Zap
 } from 'lucide-react';
 import { AgentName, StepState } from '@/types';
 
@@ -61,6 +63,7 @@ export function ActivityLog({ agentName, jobId, isOpen, onClose, status }: Activ
 
   const fetchLogs = async () => {
     if (!jobId) return;
+    setLoading(true);
     try {
       const res = await fetch(`/api/jobs/${jobId}/logs?agentName=${agentName}`);
       if (res.ok) {
@@ -69,6 +72,8 @@ export function ActivityLog({ agentName, jobId, isOpen, onClose, status }: Activ
       }
     } catch (e) {
       console.error('Failed to fetch activity logs:', e);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -114,20 +119,66 @@ export function ActivityLog({ agentName, jobId, isOpen, onClose, status }: Activ
                   </div>
                 </div>
               </div>
-              <button 
-                onClick={onClose}
-                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
-              >
-                <X size={20} className="text-slate-400" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={async () => {
+                    if (!jobId) return;
+                    setLoading(true);
+                    try {
+                      await fetch(`/api/jobs/${jobId}/resume`, { method: 'POST' });
+                      await fetchLogs();
+                    } catch (e) {
+                      console.error('Wake up failed:', e);
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  disabled={loading}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded-lg text-xs font-bold transition-colors"
+                >
+                  <Zap size={14} className={loading ? 'animate-pulse' : 'fill-current'} />
+                  <span>깨우기</span>
+                </button>
+                <div className="w-px h-4 bg-slate-200 dark:bg-slate-800 mx-1" />
+                <button 
+                  onClick={fetchLogs}
+                  disabled={loading}
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400"
+                  title="새로고침"
+                >
+                  <RotateCw size={18} className={loading ? 'animate-spin' : ''} />
+                </button>
+                <button 
+                  onClick={onClose}
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+                >
+                  <X size={20} className="text-slate-400" />
+                </button>
+              </div>
             </div>
 
             {/* Log Content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {logs.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-50 space-y-2 py-20">
-                  <Terminal size={40} />
-                  <p>No activity recorded yet</p>
+                <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-4 py-20">
+                  <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-900 flex items-center justify-center text-slate-200">
+                    <Terminal size={32} />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-bold text-slate-500 dark:text-slate-400">아직 활동 기록이 없습니다</p>
+                    <p className="text-xs text-slate-400 mt-1">에이전트가 생각 중이거나 잠들어 있을 수 있습니다.</p>
+                  </div>
+                  <button 
+                    onClick={async () => {
+                      if (!jobId) return;
+                      setLoading(true);
+                      await fetch(`/api/jobs/${jobId}/resume`, { method: 'POST' });
+                      await fetchLogs();
+                    }}
+                    className="mt-2 px-4 py-2 bg-slate-900 dark:bg-amber-400 text-white dark:text-slate-900 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg"
+                  >
+                    에이전트 깨우기
+                  </button>
                 </div>
               ) : (
                 <div className="relative">

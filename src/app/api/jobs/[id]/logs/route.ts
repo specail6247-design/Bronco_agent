@@ -10,18 +10,15 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
     console.log(`[Logs API] Fetching logs for Job: ${id}, Agent: ${agentName}`);
 
-    // Fetch logs for this job
-    let query: any = adminDb.collection('activity_logs').where('jobId', '==', id);
-    
-    if (agentName) {
-      query = query.where('agentName', '==', agentName);
-    }
-
-    const logsSnap = await query.get();
+    // Fetch logs for this job (filter agentName in memory to avoid composite index)
+    const logsSnap = await adminDb
+      .collection('activity_logs')
+      .where('jobId', '==', id)
+      .get();
     console.log(`[Logs API] Found ${logsSnap.size} logs in DB.`);
     
     // Process and sort in memory to avoid index requirement
-    const logs = logsSnap.docs
+    const allLogs = logsSnap.docs
       .map((doc: any) => {
         const data = doc.data();
         let ts: string;
@@ -43,6 +40,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         };
       })
       .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+    const logs = agentName
+      ? allLogs.filter((log: any) => log.agentName?.toLowerCase() === agentName.toLowerCase())
+      : allLogs;
 
     return NextResponse.json({ logs });
   } catch (error) {

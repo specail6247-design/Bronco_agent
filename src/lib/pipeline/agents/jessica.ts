@@ -11,9 +11,16 @@ export async function jessica(context: AgentContext): Promise<AgentResult> {
     // START LOGGING
     await logActivity(jobId, 'jessica', 'THOUGHT', `Analyzing trending topics for "${topic}"`);
     
-    // 1. Get real search results
-    await logActivity(jobId, 'jessica', 'ACTION', `Searching Google (SERPER) for latest trends on "${topic}"...`);
-    const searchResults = await searchGoogle(topic);
+    const serperEnabled = process.env.SERPER_ENABLED === 'true';
+
+    // 1. Get real search results (optional)
+    let searchResults: any[] = [];
+    if (serperEnabled) {
+      await logActivity(jobId, 'jessica', 'ACTION', `Searching Google (SERPER) for latest trends on "${topic}"...`);
+      searchResults = await searchGoogle(topic);
+    } else {
+      await logActivity(jobId, 'jessica', 'THOUGHT', 'SERPER disabled. Proceeding with internal knowledge base.');
+    }
     
     if (!searchResults || searchResults.length === 0) {
       await logActivity(jobId, 'jessica', 'THOUGHT', `No direct search results found. Jessica will proceed using her internal knowledge base.`);

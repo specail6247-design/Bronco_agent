@@ -1,4 +1,10 @@
 export async function searchGoogle(query: string) {
+  const enabled = process.env.SERPER_ENABLED === 'true';
+  if (!enabled) {
+    console.warn('SERPER is disabled. Returning empty search results.');
+    return [];
+  }
+
   const apiKey = process.env.SERPER_API_KEY;
   if (!apiKey) {
     console.warn("SERPER_API_KEY is missing. Returning empty search results.");

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ChevronLeft, FileText, Search, PenTool, Layout, X, Trash2 } from 'lucide-react';
+import { ChevronLeft, FileText, Search, PenTool, Layout, X, Trash2, Zap } from 'lucide-react';
 import { Button, StatusBadge, AgentBanner, GlassCard, ActivityLog } from '@/components/ui';
 import type { AgentName } from '@/types';
 import ClientOnly from '@/components/ClientOnly';
@@ -110,11 +110,15 @@ export default function JobDetailPage() {
             <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard')} className="p-2">
               <ChevronLeft size={24} />
             </Button>
-            <div>
-              <h1 className="text-2xl font-black text-slate-900 leading-tight">{currentJob.topic}</h1>
-              <div className="flex items-center gap-3 mt-2">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl md:text-2xl font-black text-slate-900 leading-tight truncate px-1" title={currentJob.topic}>
+                {currentJob.topic}
+              </h1>
+              <div className="flex items-center gap-3 mt-2 px-1">
                 <StatusBadge status={currentJob.state} />
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Job ID: {id}</span>
+                <span className="hidden sm:inline text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  ID: {id}
+                </span>
               </div>
             </div>
           </div>
@@ -128,30 +132,32 @@ export default function JobDetailPage() {
               <Trash2 size={24} />
             </Button>
             
-            {/* Resume Button - Visible if stuck or failed */}
-            {(currentJob.state === 'RUNNING' || currentJob.state === 'FAILED') && (
-              <button 
-                onClick={handleResume}
-                disabled={resuming || !id}
-                className={`
-                  px-6 py-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all
-                  ${resuming ? 'bg-slate-100 text-slate-400' : 'bg-slate-900 border border-slate-700 text-white hover:bg-slate-800'}
-                `}
-              >
-                {resuming ? "Waking agents..." : "Resume Job"}
-              </button>
+            {/* Advance / Resume Buttons */}
+            {currentJob.state !== 'DONE' && (
+              <div className="flex items-center gap-2">
+                {(currentJob.state === 'RUNNING' || currentJob.state === 'FAILED' || currentJob.state === 'SCHEDULED' || currentJob.state === 'PAUSED') && (
+                  <Button 
+                    variant="secondary"
+                    onClick={handleResume}
+                    disabled={resuming || !id}
+                    className="h-12 px-4 text-xs font-bold uppercase tracking-widest border-2 border-slate-200"
+                    icon={<Zap size={14} className="text-amber-500 fill-amber-500" />}
+                  >
+                    {resuming ? "깨우는 중..." : "깨우기"}
+                  </Button>
+                )}
+                <Button 
+                  onClick={handleAdvance}
+                  disabled={advancing || !id}
+                  className={`
+                    h-12 px-6 font-black text-sm uppercase tracking-widest shadow-lg active:scale-95
+                    ${advancing ? 'bg-slate-100 text-slate-400' : 'bg-orange-500 hover:bg-orange-600 text-white shadow-orange-200'}
+                  `}
+                >
+                  {advancing ? "WAIT..." : "단계 강제 실행"}
+                </Button>
+              </div>
             )}
-
-            <button 
-              onClick={handleAdvance}
-              disabled={advancing || !id}
-              className={`
-                px-8 py-4 rounded-xl font-black text-sm uppercase tracking-widest transition-all shadow-lg active:scale-95
-                ${advancing ? 'bg-slate-100 text-slate-400' : 'bg-orange-500 hover:bg-orange-600 text-white shadow-orange-200'}
-              `}
-            >
-              {advancing ? "Synchronizing..." : "Advance Step"}
-            </button>
           </div>
         </div>
 

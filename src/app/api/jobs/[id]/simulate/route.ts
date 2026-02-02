@@ -43,14 +43,27 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     const batch = adminDb.batch();
 
     if (currentStepIndex === -1) {
-      // If none are working, start the first one (Jessica)
-      if (steps[0] && steps[0].state === 'WAITING') {
-        batch.update(adminDb.collection('job_steps').doc(steps[0].id), { 
+      // If none are working, find the first non-DONE step
+      const nextStepIndex = steps.findIndex(s => s.state === 'WAITING' || s.state === 'FAILED');
+      
+      if (nextStepIndex !== -1) {
+        const nextStep = steps[nextStepIndex];
+        batch.update(adminDb.collection('job_steps').doc(nextStep.id), { 
           state: 'WORKING', 
           updatedAt: new Date() 
         });
+        
+        // Log the manual start immediately to the DB
+        await adminDb.collection('activity_logs').add({
+          jobId,
+          agentName: nextStep.stepName,
+          type: 'THOUGHT',
+          content: `관리자 명령으로 활동을 시작합니다. 현재 단계: ${nextStep.stepName}`,
+          timestamp: new Date()
+        });
+
       } else {
-        return NextResponse.json({ message: 'All steps are already completed or non-startable.' });
+        return NextResponse.json({ message: '모든 단계가 완료되었습니다.' });
       }
     } else {
       // 3. Create a realistic artifact for the finished step
