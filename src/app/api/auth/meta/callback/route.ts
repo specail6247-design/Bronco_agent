@@ -16,6 +16,10 @@ export async function GET(req: NextRequest) {
       return new NextResponse('Invalid callback parameters', { status: 400 });
     }
 
+    // Security Check
+    const userDoc = await adminDb.collection('users').doc(uid).get();
+    if (!userDoc.exists) return new NextResponse('User Not Found', { status: 403 });
+
     const data = await exchangeMetaCode(code);
     
     if (data.error) {
