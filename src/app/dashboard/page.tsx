@@ -207,9 +207,24 @@ export default function DashboardPage() {
     };
 
     fetchStatuses();
-    interval = setInterval(fetchStatuses, 5000);
+
+    // Smart Polling: Adjust interval based on job state to save DB reads ("아끼다")
+    // If RUNNING: Poll every 4s (High fidelity)
+    // If DONE/FAILED: Poll every 60s (Low cost maintenance)
+    // Default: 10s
+    let pollInterval = 10000;
+    
+    // Find current job state
+    const currentJob = jobs.find(j => j.id === selectedJobId);
+    if (currentJob?.state === 'RUNNING') {
+      pollInterval = 4000;
+    } else if (currentJob?.state === 'DONE' || currentJob?.state === 'FAILED') {
+      pollInterval = 60000;
+    }
+
+    interval = setInterval(fetchStatuses, pollInterval);
     return () => clearInterval(interval);
-  }, [selectedJobId]);
+  }, [selectedJobId, jobs]); // Added 'jobs' dependency to react to state changes
 
   // Automatically select the most recent job
   // Fix: Added strict ID check to prevent React Error #185 (Maximum update depth)
