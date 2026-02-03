@@ -96,7 +96,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const { id } = params;
     const adminDb = getAdminDb();
     const updates = await req.json();
-    await adminDb.collection('jobs').doc(id).update({
+    const jobRef = adminDb.collection('jobs').doc(id);
+    const jobDoc = await jobRef.get();
+    if (!jobDoc.exists) {
+      return new NextResponse('Job not found', { status: 404 });
+    }
+
+    await jobRef.update({
       ...updates,
       updatedAt: new Date(),
     });

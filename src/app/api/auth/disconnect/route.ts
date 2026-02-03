@@ -12,12 +12,30 @@ export async function POST(req: NextRequest) {
     const adminDb = getAdminDb();
     
     // Delete the specific platform connection document
-    await adminDb
-      .collection('users')
-      .doc(uid)
-      .collection('connections')
-      .doc(platform)
-      .delete();
+    const userRef = adminDb.collection('users').doc(uid);
+    const subConnRef = userRef.collection('connections').doc(platform);
+    
+    const batch = adminDb.batch();
+    
+    const { FieldValue } = require('firebase-admin/firestore');
+    
+    // 1. Delete from sub-collection (Credentials)
+    batch.delete(subConnRef);
+    
+    // 2. Remove flag from root connections object
+    batch.update(userRef, {
+      [`connections.${platform}`]: FieldValue.delete() 
+    });
+    
+    // Alternative for safety if FieldValue.delete is tricky
+    await batch.commit();
+
+    // Secondary cleanup for the root object map
+    await userRef.set({
+      connections: {
+        [platform]: { connected: false, disconnectedAt: new Date() }
+      }
+    }, { merge: true });
 
     console.log(`[Disconnect] Successfully disconnected ${platform} for user ${uid}`);
     

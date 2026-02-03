@@ -390,6 +390,17 @@ export default function DashboardPage() {
     }
   };
 
+  const formatDate = (dateStr: any) => {
+    if (!dateStr) return 'Pending...';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return 'TBD';
+      return d.toLocaleString();
+    } catch (e) {
+      return 'TBD';
+    }
+  };
+
   // Connected count memo
   const connectedCount = useMemo(() => {
     // For Demo: Add +2 for the hardcoded X and TikTok cards
@@ -397,7 +408,8 @@ export default function DashboardPage() {
     if (!user || !user.connections) return count;
     const conns = user.connections;
     count += Object.keys(conns).filter(key => {
-      if (key === 'x' || key === 'tiktok') return false; // Already counted in +2
+      // Don't double count X/TikTok if they happen to be in the object
+      if (key === 'x' || key === 'tiktok') return false; 
       const c = (conns as any)[key];
       return c && (c.connected === true || c.accessToken);
     }).length;
@@ -568,7 +580,7 @@ export default function DashboardPage() {
                                   {job?.topic || 'Untitled Production'}
                                 </h4>
                                 <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">
-                                  {job?.scheduledAt ? new Date(job.scheduledAt).toLocaleString() : 'Scheduling...'}
+                                  {formatDate(job?.scheduledAt)}
                                 </p>
                             </div>
                           </div>

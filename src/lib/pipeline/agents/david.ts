@@ -1,6 +1,7 @@
 import { AgentContext, AgentResult } from '@/types';
 import { getAdapter } from '@/lib/adapters';
 import { logActivity } from '@/lib/pipeline/logger';
+import { refreshYouTubeToken, refreshXToken, refreshTikTokToken } from '@/lib/auth/token-manager';
 
 // Agent 5: David (Post-publish QA Checks & Publishing)
 export async function david(context: AgentContext): Promise<AgentResult> {
@@ -19,6 +20,13 @@ export async function david(context: AgentContext): Promise<AgentResult> {
     for (const meta of platformMetadata) {
       try {
         await logActivity(jobId, 'david', 'ACTION', `Publishing to ${meta.platform}...`);
+        
+        // 1. Refresh Token if needed
+        const userId = context.job.ownerId || 'user_default';
+        if (meta.platform === 'youtube') await refreshYouTubeToken(userId);
+        if (meta.platform === 'x') await refreshXToken(userId);
+        if (meta.platform === 'tiktok') await refreshTikTokToken(userId);
+
         const adapter = getAdapter(meta.platform);
         
         // Publish
