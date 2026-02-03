@@ -16,6 +16,10 @@ export async function GET(req: NextRequest) {
       return new NextResponse('Invalid callback parameters or expired session', { status: 400 });
     }
 
+    // Security Check
+    const userDoc = await adminDb.collection('users').doc(uid).get();
+    if (!userDoc.exists) return new NextResponse('User Not Found', { status: 403 });
+
     const data = await exchangeXCode(code, codeVerifier);
     
     if (data.error) {

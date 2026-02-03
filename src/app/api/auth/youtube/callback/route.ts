@@ -16,6 +16,13 @@ export async function GET(req: NextRequest) {
       return new NextResponse('Invalid callback parameters', { status: 400 });
     }
 
+    // Security Check: Ensure UID refers to a real user
+    const userDoc = await adminDb.collection('users').doc(uid).get();
+    if (!userDoc.exists) {
+        console.error(`[YouTube Auth] blocked connection attempt for non-existent uid: ${uid}`);
+        return new NextResponse('Process Forbidden: User ID Invalid', { status: 403 });
+    }
+
     const host = req.headers.get('x-forwarded-host') || req.headers.get('host');
     const isLocal = host?.includes('localhost') || host?.includes('127.0.0.1');
     const appUrl = isLocal 
