@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback, type ReactNode, type KeyboardEvent } from 'react';
+import { useState, useEffect, useMemo, useCallback, Suspense, type ReactNode, type KeyboardEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Plus, 
@@ -156,7 +156,7 @@ function PlatformCard({
   );
 }
 
-export default function DashboardPage() {
+function DashboardPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [user, setUser] = useState<User | null>(null);
@@ -629,5 +629,22 @@ export default function DashboardPage() {
         )}
       </main>
     </ClientOnly>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white dark:from-slate-950 to-slate-50 dark:to-slate-900">
+        <div className="flex flex-col items-center gap-6">
+          <div className="w-12 h-12 border-4 border-amber-400 border-t-transparent rounded-full animate-spin shadow-[0_0_20px_rgba(251,191,36,0.2)]" />
+          <div className="text-amber-400/40 font-black tracking-[0.3em] text-[10px] uppercase animate-pulse">
+            Bronco Pipeline Initializing
+          </div>
+        </div>
+      </main>
+    }>
+      <DashboardPageInner />
+    </Suspense>
   );
 }
