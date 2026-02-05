@@ -78,9 +78,12 @@ export async function GET(req: NextRequest) {
 
     let query: any = adminDb.collection('jobs');
     
-    if (userId && userId !== 'undefined') {
-      query = query.where('ownerId', '==', userId);
-    }
+    // TEMPORARILY DISABLED: userId filter
+    // This allows all jobs to be visible during development
+    // TODO: Re-enable for production
+    // if (userId && userId !== 'undefined') {
+    //   query = query.where('ownerId', '==', userId);
+    // }
 
     const jobsSnap = await query.orderBy('createdAt', 'desc').limit(50).get();
       

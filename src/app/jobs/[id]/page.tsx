@@ -88,6 +88,250 @@ export default function JobDetailPage() {
 
   const agents = ['jessica', 'sunny', 'rovert', 'tim', 'david', 'john'];
 
+  // Beautiful artifact content renderer
+  const renderArtifactContent = (artifact: any) => {
+    const content = artifact.contentJson;
+    const type = artifact.type;
+
+    // Helper for section headers
+    const SectionHeader = ({ children }: { children: React.ReactNode }) => (
+      <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-100 pb-2">{children}</h4>
+    );
+
+    // Upload Package (Tim's output)
+    if (type === 'upload_package' || content?.readyToPublish !== undefined) {
+      return (
+        <div className="space-y-6">
+          {/* Video Preview */}
+          {content?.videoUrl && (
+            <div className="rounded-2xl overflow-hidden bg-slate-900 shadow-xl">
+              <video 
+                src={content.videoUrl} 
+                controls 
+                className="w-full aspect-video"
+                poster={content.thumbnailUrl !== 'https://example.com/default-thumbnail.jpg' ? content.thumbnailUrl : undefined}
+              />
+            </div>
+          )}
+          
+          {/* Status Badge */}
+          <div className="flex items-center gap-3">
+            <span className={`px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest ${content?.readyToPublish ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+              {content?.readyToPublish ? '✅ 게시 준비 완료' : '⏳ 처리 중'}
+            </span>
+            {content?.renderId && (
+              <span className="text-[10px] font-mono text-slate-400">
+                Render ID: {content.renderId}
+              </span>
+            )}
+          </div>
+
+          {/* Platforms */}
+          {content?.platforms && content.platforms.length > 0 && (
+            <div>
+              <SectionHeader>📱 게시 플랫폼 ({content.platforms.length})</SectionHeader>
+              <div className="space-y-4">
+                {content.platforms.map((p: any, idx: number) => (
+                  <div key={idx} className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="px-3 py-1 bg-slate-900 text-white rounded-lg text-[10px] font-black uppercase tracking-widest">
+                        {p.platform}
+                      </span>
+                    </div>
+                    <h5 className="font-bold text-slate-900 mb-2">{p.title}</h5>
+                    <p className="text-sm text-slate-600 mb-3 line-clamp-3">{p.description}</p>
+                    {p.hashtags && (
+                      <div className="flex flex-wrap gap-2">
+                        {p.hashtags.map((tag: string, i: number) => (
+                          <span key={i} className="px-2 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold">
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Research (Jessica's output)
+    if (type === 'research' || content?.keywords !== undefined) {
+      return (
+        <div className="space-y-6">
+          {content?.summary && (
+            <div>
+              <SectionHeader>📝 요약</SectionHeader>
+              <p className="text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-xl">{content.summary}</p>
+            </div>
+          )}
+          
+          {content?.keywords && content.keywords.length > 0 && (
+            <div>
+              <SectionHeader>🔑 키워드</SectionHeader>
+              <div className="flex flex-wrap gap-2">
+                {content.keywords.map((kw: string, i: number) => (
+                  <span key={i} className="px-3 py-1.5 bg-amber-100 text-amber-800 rounded-full text-sm font-semibold">
+                    {kw}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {content?.trendingScore !== undefined && (
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">트렌드 점수:</span>
+              <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg font-black">{content.trendingScore}/100</span>
+            </div>
+          )}
+
+          {content?.competitorAngles && content.competitorAngles.length > 0 && (
+            <div>
+              <SectionHeader>🎯 경쟁사 분석</SectionHeader>
+              <ul className="space-y-2">
+                {content.competitorAngles.map((angle: string, i: number) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
+                    <span className="text-amber-500">•</span>
+                    {angle}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Script (Sunny's output)
+    if (type === 'script' || content?.title !== undefined) {
+      return (
+        <div className="space-y-6">
+          {content?.title && (
+            <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-5 rounded-2xl">
+              <span className="text-[10px] font-bold uppercase tracking-widest opacity-70">영상 제목</span>
+              <h3 className="text-lg font-black mt-1">{content.title}</h3>
+            </div>
+          )}
+
+          {content?.hook && (
+            <div>
+              <SectionHeader>🎣 후킹 (오프닝)</SectionHeader>
+              <p className="text-slate-700 leading-relaxed bg-yellow-50 p-4 rounded-xl border-l-4 border-yellow-400">{content.hook}</p>
+            </div>
+          )}
+
+          {content?.body && (
+            <div>
+              <SectionHeader>📋 본문</SectionHeader>
+              <p className="text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-xl whitespace-pre-wrap">{content.body}</p>
+            </div>
+          )}
+
+          {content?.cta && (
+            <div>
+              <SectionHeader>📢 CTA (Call To Action)</SectionHeader>
+              <p className="text-slate-700 leading-relaxed bg-emerald-50 p-4 rounded-xl border-l-4 border-emerald-400">{content.cta}</p>
+            </div>
+          )}
+
+          {content?.estimatedDurationSeconds && (
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">예상 길이:</span>
+              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg font-black">
+                {Math.floor(content.estimatedDurationSeconds / 60)}분 {content.estimatedDurationSeconds % 60}초
+              </span>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Storyboard (Rovert's output)
+    if (type === 'storyboard' || content?.scenes !== undefined) {
+      return (
+        <div className="space-y-4">
+          <SectionHeader>🎬 씬 구성 ({content?.scenes?.length || 0}개)</SectionHeader>
+          {content?.scenes?.map((scene: any, idx: number) => (
+            <div key={idx} className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+              <div className="flex items-center justify-between mb-3">
+                <span className="px-3 py-1 bg-slate-900 text-white rounded-lg text-xs font-black">
+                  Scene {idx + 1}
+                </span>
+                {scene.duration && (
+                  <span className="text-xs font-semibold text-slate-500">{scene.duration}초</span>
+                )}
+              </div>
+              <p className="text-sm text-slate-700 mb-2">{scene.description || scene.text}</p>
+              {scene.visualNotes && (
+                <p className="text-xs text-purple-600 italic">🎨 {scene.visualNotes}</p>
+              )}
+              {scene.assetSuggestions && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {scene.assetSuggestions.map((asset: string, i: number) => (
+                    <span key={i} className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded text-[10px] font-semibold">
+                      {asset}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // Default: Pretty JSON fallback
+    return (
+      <pre className="text-sm text-slate-600 bg-slate-50 p-6 rounded-2xl overflow-x-auto whitespace-pre-wrap font-mono">
+        {JSON.stringify(content, null, 2)}
+      </pre>
+    );
+  };
+
+  // Helper to generate short preview text for artifact cards
+  const getArtifactPreview = (artifact: any): string => {
+    const content = artifact.contentJson;
+    const type = artifact.type;
+
+    if (type === 'research' || content?.keywords !== undefined) {
+      const keywordCount = content?.keywords?.length || 0;
+      const score = content?.trendingScore;
+      return `🔑 ${keywordCount}개 키워드 추출 • 트렌드 점수: ${score || '-'}/100`;
+    }
+
+    if (type === 'script' || content?.title !== undefined) {
+      const duration = content?.estimatedDurationSeconds;
+      const mins = duration ? Math.floor(duration / 60) : 0;
+      return `📝 "${content?.title?.substring(0, 40) || 'Untitled'}..." • ${mins}분`;
+    }
+
+    if (type === 'storyboard' || content?.scenes !== undefined) {
+      const sceneCount = content?.scenes?.length || 0;
+      return `🎬 ${sceneCount}개 씬 구성 완료`;
+    }
+
+    if (type === 'upload_package' || content?.readyToPublish !== undefined) {
+      const platformCount = content?.platforms?.length || 0;
+      const status = content?.readyToPublish ? '✅ 게시 준비 완료' : '⏳ 처리 중';
+      return `📹 ${platformCount}개 플랫폼 • ${status}`;
+    }
+
+    if (type === 'publish_report' || content?.results !== undefined) {
+      const successCount = content?.results?.filter((r: any) => r.success)?.length || 0;
+      return `📊 ${successCount}개 채널 게시 완료`;
+    }
+
+    if (type === 'performance_report') {
+      return `📈 성과 리포트`;
+    }
+
+    return '클릭하여 상세 보기';
+  };
+
   const getArtifactIcon = (type: string) => {
     switch (type) {
       case 'research': return <Search className="text-blue-500" size={18} />;
@@ -207,7 +451,9 @@ export default function JobDetailPage() {
                       </span>
                     </div>
                     <h4 className="font-bold text-slate-800 capitalize">{art.stepName}'s {art.type}</h4>
-                    <p className="text-xs text-slate-500 mt-1 line-clamp-1">{JSON.stringify(art.contentJson)}</p>
+                    <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                      {getArtifactPreview(art)}
+                    </p>
                   </GlassCard>
                 ))}
               </div>
@@ -229,9 +475,7 @@ export default function JobDetailPage() {
                 </button>
               </div>
               <div className="p-8 max-h-[60vh] overflow-y-auto">
-                 <pre className="text-sm text-slate-600 bg-slate-50 p-6 rounded-2xl overflow-x-auto whitespace-pre-wrap font-mono">
-                   {JSON.stringify(selectedArtifact.contentJson, null, 2)}
-                 </pre>
+                 {renderArtifactContent(selectedArtifact)}
               </div>
               <div className="p-6 border-t border-slate-100 flex justify-end">
                 <Button variant="secondary" onClick={() => setSelectedArtifact(null)}>Close Viewer</Button>

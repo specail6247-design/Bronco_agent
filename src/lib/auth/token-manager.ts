@@ -160,3 +160,30 @@ export async function refreshTikTokToken(userId: string): Promise<string | null>
     return null;
   }
 }
+
+// --- 4. Threads Refresh ---
+export async function refreshThreadsToken(userId: string): Promise<string | null> {
+  try {
+    const userRef = adminDb.collection('users').doc(userId);
+    const connRef = userRef.collection('connections').doc('threads');
+    const doc = await connRef.get();
+
+    if (!doc.exists) throw new Error('No Threads connection found');
+    const data = doc.data();
+
+    // Long-lived tokens for Threads/Meta usually last 60 days.
+    // We check if it's expired.
+    if (data?.expiryDate && Date.now() < data.expiryDate - 86400000) { // 1 day buffer
+      return data.accessToken;
+    }
+    
+    // Meta/Threads token refresh usually requires a specific endpoint
+    // For now, if expired, we might need re-auth, but we can try to use long-lived token exchange
+    console.log('[TokenManager] Checking Threads Token status...');
+    
+    return data?.accessToken || null;
+  } catch (error) {
+    console.error('[TokenManager] Threads Refresh Failed:', error);
+    return null;
+  }
+}

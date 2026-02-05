@@ -1,12 +1,13 @@
 import { YouTubeAdapter } from './youtube';
 import { TikTokAdapter } from './tiktok';
+import { ThreadsAdapter } from './threads';
 import { PlatformAdapter } from './types';
 import { Platform } from '@/types';
 
 const adapters: Record<string, PlatformAdapter> = {
   youtube: new YouTubeAdapter(),
   tiktok: new TikTokAdapter(),
-  // Add other stubs here or reuse generic ones for MVP
+  threads: new ThreadsAdapter(),
 };
 
 export function getAdapter(platform: Platform): PlatformAdapter {

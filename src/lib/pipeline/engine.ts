@@ -117,8 +117,23 @@ export async function runPipeline(job: Job) {
                  // Set to NEED_APPROVAL
                  await adminDb.collection('jobs').doc(job.id).update({ state: 'NEED_APPROVAL', updatedAt: new Date() });
                  
-                 // TODO: Send Telegram Notification Here
-                 // await sendApprovalRequest(job, ...);
+                 // Send Telegram Notification
+                 try {
+                   const { sendApprovalRequest } = await import('@/lib/telegram/bot');
+                   const timArtifact = await adminDb.collection('artifacts')
+                     .where('jobId', '==', job.id)
+                     .where('agentName', '==', 'tim')
+                     .limit(1)
+                     .get();
+                   
+                   if (!timArtifact.empty) {
+                     const uploadPackage = timArtifact.docs[0].data().contentJson;
+                     await sendApprovalRequest(job, uploadPackage);
+                     console.log(`[Pipeline] Telegram approval request sent for job ${job.id}`);
+                   }
+                 } catch (telegramError) {
+                   console.error('[Pipeline] Failed to send Telegram notification:', telegramError);
+                 }
                  
                  console.log(`[Pipeline] Pausing for Owner Approval on job ${job.id}`);
                  return; // Stop pipeline execution here

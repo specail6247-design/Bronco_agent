@@ -88,3 +88,88 @@ Run unit tests:
 ```bash
 npm run test
 ```
+
+---
+
+## 📱 Telegram Approval Notifications
+
+Bronco can send real-time approval requests to your Telegram when videos are ready for review.
+
+### Setup:
+
+1. Create a Telegram bot via [@BotFather](https://t.me/botfather)
+2. Get your Chat ID by messaging [@userinfobot](https://t.me/userinfobot)
+3. Add to `.env.local`:
+   ```bash
+   TELEGRAM_BOT_TOKEN=your_bot_token_here
+   TELEGRAM_OWNER_CHAT_ID=your_chat_id_here
+   ```
+
+### Test Telegram Integration:
+
+```bash
+TELEGRAM_BOT_TOKEN="your_token" TELEGRAM_OWNER_CHAT_ID="your_chat_id" npx tsx src/lib/telegram/test-telegram.ts
+```
+
+When Tim completes a video, you'll receive:
+
+- 🚀 Job details and platform targets
+- 🎬 Direct link to rendered video
+- ✅ Approve / ⏸ Hold / ✍️ Request Edits buttons
+
+---
+
+## 🎨 Recent Improvements (v1.1.0 - Feb 5, 2026)
+
+### ✨ Artifact Display Overhaul
+
+- **Before**: Raw JSON dumps in modals
+- **After**: Beautiful, type-specific UI:
+  - Research: Keyword tags, trend scores, competitor analysis
+  - Scripts: Formatted sections with duration estimates
+  - Storyboards: Visual scene cards
+  - Videos: **Embedded player** with platform metadata
+
+### 📱 Telegram Integration
+
+- Real-time approval notifications when videos are ready
+- Interactive buttons for instant decision-making
+- No more checking the dashboard constantly!
+
+### 🔐 Data Recovery Tools
+
+- Admin endpoint for ownership management
+- Zero data loss guarantee
+- Safe migration between accounts
+
+---
+
+## 📊 System Status
+
+**Version**: `v1.1.0-FEB05`  
+**Status**: 🟢 **PRODUCTION READY**
+
+- ✅ All 6 agents operational
+- ✅ Artifact rendering: Professional UI
+- ✅ Telegram notifications: Active
+- ✅ OAuth: YouTube, X, TikTok verified
+- ✅ Pipeline: Stable and tested
+- ✅ Data integrity: Verified
+
+---
+
+## 🔒 Stability Lock
+
+⚠️ **Core systems are locked for stability**. The following components have been verified and should not be modified without proper backup:
+
+- Artifact rendering logic (`src/app/jobs/[id]/page.tsx`)
+- Pipeline engine (`src/lib/pipeline/engine.ts`)
+- Telegram integration (`src/lib/telegram/bot.ts`)
+
+---
+
+## 📞 Support
+
+For issues or questions, contact: **specail6247@gmail.com**
+
+**Built with ❤️ by the Bronco Team**

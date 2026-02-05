@@ -9,8 +9,8 @@ export async function askGemini(prompt: string, jsonResponse = false) {
 
   const genAI = new GoogleGenerativeAI(apiKey);
   
-  // Try primary model first
-  let modelName = "gemini-1.5-flash";
+  // Try primary model first (using currently supported model)
+  let modelName = "gemini-2.0-flash";
   let model = genAI.getGenerativeModel({ model: modelName });
 
   try {
@@ -34,9 +34,9 @@ export async function askGemini(prompt: string, jsonResponse = false) {
   } catch (error: any) {
     console.warn(`[Gemini] Primary model ${modelName} failed. Attempting fallback...`, error.message);
     
-    // Fallback to gemini-pro if 1.5-flash fails
+    // Fallback to gemini-2.5-flash if gemini-2.0-flash fails
     try {
-      const fallbackModel = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const fallbackModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
       const result = await fallbackModel.generateContent(prompt);
       const response = await result.response;
       const text = response.text();

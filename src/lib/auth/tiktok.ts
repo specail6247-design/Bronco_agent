@@ -21,7 +21,8 @@ export function generateCodeChallenge(verifier: string) {
 export function getTikTokAuthUrl(uid: string, codeChallenge: string) {
   const scope = [
     'user.info.basic',
-    // Removed video.upload/publish temporarily to ensure basic login passes first
+    'video.upload',
+    'video.publish'
   ].join(',');
 
   const url = new URL('https://www.tiktok.com/v2/auth/authorize/');
