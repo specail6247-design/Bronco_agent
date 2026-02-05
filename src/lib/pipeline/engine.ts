@@ -49,7 +49,7 @@ export async function runPipeline(job: Job) {
         batch.set(stepRef, {
           jobId: job.id,
           stepName: agent,
-          state: agent === 'jessica' ? 'WORKING' : 'WAITING',
+        state: 'WAITING',
           updatedAt: new Date(),
           createdAt: new Date(),
         });
@@ -148,9 +148,22 @@ export async function runPipeline(job: Job) {
       // Create or update step to WORKING
       let stepId = step?.id;
       if (step?.state === 'WORKING') {
-        console.log(`[Pipeline] Step ${agentName} is already WORKING. Skipping to prevent double execution.`);
-        await logActivity(job.id, agentName as any, 'THOUGHT', `[#${attemptId}] Concurrent execution detected. Skipping redundant activation to prevent double work.`);
-        return; // Important: Don't just skip, exit this pipeline run to avoid overlapping
+        // Check if this WORKING state is stale (stuck for more than 5 minutes)
+        const startedAt = step.startedAt?.toDate ? step.startedAt.toDate() : new Date(step.startedAt || 0);
+        const now = new Date();
+        const minutesStuck = (now.getTime() - startedAt.getTime()) / (1000 * 60);
+        
+        if (minutesStuck < 5) {
+          // Fresh lock - respect it and exit
+          console.log(`[Pipeline] Step ${agentName} is actively WORKING (${minutesStuck.toFixed(1)}min). Respecting concurrent execution guard.`);
+          await logActivity(job.id, agentName as any, 'THOUGHT', `[#${attemptId}] Concurrent execution detected. Another instance is actively processing this step. Yielding control.`);
+          return;
+        } else {
+          // Stale lock - force recovery
+          console.log(`[Pipeline] Step ${agentName} has been WORKING for ${minutesStuck.toFixed(1)} minutes - appears to be a ghost lock. Forcing recovery.`);
+          await logActivity(job.id, agentName as any, 'THOUGHT', `[#${attemptId}] Detected stale lock (${minutesStuck.toFixed(0)}min old). Forcing recovery and resuming execution.`);
+          // Will be reset to WORKING below with new timestamp
+        }
       }
 
       if (!stepId) {

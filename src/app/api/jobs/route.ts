@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       batch.set(stepRef, {
         jobId,
         stepName: agent,
-        state: agent === 'jessica' ? 'WORKING' : 'WAITING',
+        state: 'WAITING',
         updatedAt: new Date(),
         createdAt: new Date(),
       });
