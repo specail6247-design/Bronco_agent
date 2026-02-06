@@ -54,13 +54,21 @@ export async function jessica(context: AgentContext): Promise<AgentResult> {
     await logActivity(jobId, 'jessica', 'ACTION', `Analyzing data with Gemini-1.5-Flash...`);
     const analysis = await askGemini(prompt, true);
     
-    await logActivity(jobId, 'jessica', 'RESULT', `Research complete! Extracted ${analysis.keywords?.length || 0} viral keywords and CTR-optimized angles.`);
+    // Defensive: Validate and normalize Gemini response
+    const safeAnalysis = {
+      summary: analysis?.summary || 'Analysis completed but summary unavailable.',
+      keywords: Array.isArray(analysis?.keywords) ? analysis.keywords : [],
+      trendingScore: typeof analysis?.trendingScore === 'number' ? analysis.trendingScore : 50,
+      competitorAngles: Array.isArray(analysis?.competitorAngles) ? analysis.competitorAngles : [],
+    };
+    
+    await logActivity(jobId, 'jessica', 'RESULT', `Research complete! Extracted ${safeAnalysis.keywords.length} viral keywords and CTR-optimized angles.`);
 
     return {
       success: true,
       artifactType: 'research',
       content: {
-        ...analysis,
+        ...safeAnalysis,
         rawSearchCount: searchResults.length,
         searchedAt: new Date().toISOString()
       }

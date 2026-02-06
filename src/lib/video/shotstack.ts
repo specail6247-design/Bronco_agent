@@ -15,7 +15,13 @@ export async function renderVideo(data: any) {
 
   const result = await response.json();
   if (!response.ok) {
-    throw new Error(result.message || 'Shotstack render request failed');
+    throw new Error(result?.message || 'Shotstack render request failed');
+  }
+
+  // Defensive: Validate response structure before accessing
+  if (!result?.response?.id) {
+    console.error('[Shotstack] Unexpected API response:', JSON.stringify(result));
+    throw new Error('Shotstack API returned unexpected response format (missing response.id)');
   }
 
   return result.response.id;
@@ -31,6 +37,13 @@ export async function getRenderStatus(id: string) {
   });
 
   const result = await response.json();
+  
+  // Defensive: Check if response exists
+  if (!result?.response) {
+    console.error('[Shotstack] Status check returned invalid response:', JSON.stringify(result));
+    throw new Error('Shotstack status API returned unexpected format');
+  }
+  
   return result.response;
 }
 

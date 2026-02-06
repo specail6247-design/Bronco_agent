@@ -19,15 +19,33 @@ export async function john(context: AgentContext): Promise<AgentResult> {
     for (const post of publishedPosts) {
       try {
         await logActivity(jobId, 'john', 'ACTION', `Fetching initial metrics for ${post.platform}...`);
+        
+        // Defensive: Check adapter and fetchMetrics method exist
         const adapter = getAdapter(post.platform);
+        if (!adapter || typeof adapter.fetchMetrics !== 'function') {
+          console.warn(`[John] fetchMetrics not available for ${post.platform}`);
+          metrics.push({
+            platform: post.platform,
+            postId: post.postId,
+            metrics: { note: 'Metrics collection not yet implemented for this platform' }
+          });
+          continue;
+        }
+        
         const m = await adapter.fetchMetrics(post.postId);
         metrics.push({
           platform: post.platform,
           postId: post.postId,
-          metrics: m
+          metrics: m || { note: 'No metrics returned' }
         });
-      } catch (e) {
+      } catch (e: any) {
         console.error(`Failed to fetch metrics for ${post.platform}`, e);
+        // Don't fail entire report for one platform's metrics failure
+        metrics.push({
+          platform: post.platform,
+          postId: post.postId,
+          metrics: { error: e?.message || 'Unknown error' }
+        });
       }
     }
 

@@ -13,6 +13,11 @@ export async function sunny(context: AgentContext): Promise<AgentResult> {
   const research = researchArtifact.contentJson as any;
   const lang = languageMode === 'manual' ? (preferredLanguage || 'ko') : 'en';
 
+  // Defensive: Extract research data safely
+  const researchSummary = research?.summary || 'No summary available from research phase.';
+  const researchKeywords = Array.isArray(research?.keywords) ? research.keywords.join(', ') : '';
+  const competitorAngles = Array.isArray(research?.competitorAngles) ? research.competitorAngles.join(', ') : '';
+
   try {
     await logActivity(jobId, 'sunny', 'THOUGHT', `Reading Jessica's research for "${topic}"`);
     await logActivity(jobId, 'sunny', 'ACTION', `Drafting a viral script structure in ${lang}`);
@@ -22,9 +27,9 @@ export async function sunny(context: AgentContext): Promise<AgentResult> {
       Based on the following research, write a viral video script in ${lang}.
 
       Topic: ${topic}
-      Research Summary: ${research.summary}
-      Trending Keywords: ${research.keywords?.join(', ')}
-      Competitor Angles: ${research.competitorAngles?.join(', ')}
+      Research Summary: ${researchSummary}
+      Trending Keywords: ${researchKeywords}
+      Competitor Angles: ${competitorAngles}
 
       Requirements:
       - Title: Catchy, high CTR title.

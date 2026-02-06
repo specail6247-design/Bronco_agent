@@ -19,7 +19,9 @@ import {
   MessageSquare,
   Moon,
   Sun,
-  Trash2
+  Trash2,
+  CheckSquare,
+  Square
 } from 'lucide-react';
 
 import { 
@@ -176,6 +178,10 @@ function DashboardPageInner() {
     john: 'WAITING',
   });
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  
+  // Multi-select for batch delete
+  const [selectedJobs, setSelectedJobs] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Poll step statuses for the selected job
   useEffect(() => {
@@ -365,12 +371,66 @@ function DashboardPageInner() {
       if (res.ok) {
         setJobs(jobs.filter(j => j.id !== jobId));
         if (selectedJobId === jobId) setSelectedJobId(null);
+        setSelectedJobs(prev => {
+          const next = new Set(prev);
+          next.delete(jobId);
+          return next;
+        });
       } else {
         alert('삭제 실패');
       }
     } catch (err) {
       console.error(err);
       alert('삭제 중 오류 발생');
+    }
+  };
+
+  // Toggle single job selection
+  const toggleJobSelection = (e: React.MouseEvent, jobId: string) => {
+    e.stopPropagation();
+    setSelectedJobs(prev => {
+      const next = new Set(prev);
+      if (next.has(jobId)) {
+        next.delete(jobId);
+      } else {
+        next.add(jobId);
+      }
+      return next;
+    });
+  };
+
+  // Select all / Deselect all
+  const toggleSelectAll = () => {
+    if (selectedJobs.size === jobs.length) {
+      setSelectedJobs(new Set());
+    } else {
+      setSelectedJobs(new Set(jobs.map(j => j.id)));
+    }
+  };
+
+  // Batch delete selected jobs
+  const handleBatchDelete = async () => {
+    if (selectedJobs.size === 0) return;
+    if (!confirm(`선택한 ${selectedJobs.size}개의 프로젝트를 모두 삭제하시겠습니까?`)) return;
+
+    setIsDeleting(true);
+    const deletePromises = Array.from(selectedJobs).map(jobId =>
+      fetch(`/api/jobs/${jobId}/delete`, { method: 'DELETE' })
+        .then(res => ({ jobId, ok: res.ok }))
+        .catch(() => ({ jobId, ok: false }))
+    );
+
+    const results = await Promise.all(deletePromises);
+    const deletedIds = results.filter(r => r.ok).map(r => r.jobId);
+    const failedCount = results.filter(r => !r.ok).length;
+
+    setJobs(jobs.filter(j => !deletedIds.includes(j.id)));
+    setSelectedJobs(new Set());
+    if (selectedJobId && deletedIds.includes(selectedJobId)) setSelectedJobId(null);
+    setIsDeleting(false);
+
+    if (failedCount > 0) {
+      alert(`${deletedIds.length}개 삭제 완료, ${failedCount}개 실패`);
     }
   };
 
@@ -569,8 +629,29 @@ function DashboardPageInner() {
               {/* Jobs */}
               <section>
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Active Productions</h3>
-                  <Button variant="primary" icon={<Plus size={18} />} onClick={() => router.push('/jobs/new')}>New Project</Button>
+                  <div className="flex items-center gap-4">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Active Productions</h3>
+                    {jobs.length > 0 && (
+                      <span className="text-xs text-slate-400 dark:text-slate-500">
+                        {selectedJobs.size > 0 && `${selectedJobs.size}개 선택됨`}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {jobs.length > 0 && selectedJobs.size > 0 && (
+                      <Button 
+                        variant="secondary" 
+                        size="sm"
+                        icon={<Trash2 size={16} />} 
+                        onClick={handleBatchDelete}
+                        disabled={isDeleting}
+                        className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-800"
+                      >
+                        {isDeleting ? '삭제 중...' : `선택 삭제 (${selectedJobs.size})`}
+                      </Button>
+                    )}
+                    <Button variant="primary" icon={<Plus size={18} />} onClick={() => router.push('/jobs/new')}>New Project</Button>
+                  </div>
                 </div>
 
                 {jobs.length === 0 ? (
@@ -580,37 +661,76 @@ function DashboardPageInner() {
                     <Button onClick={() => router.push('/jobs/new')}>Start First Pipeline</Button>
                   </GlassCard>
                 ) : (
-                  <div className="grid gap-4">
-                    {jobs.map((job) => (
-                      <LabelCard 
-                        key={job.id} 
-                        className="cursor-pointer group hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-all border border-slate-100 dark:border-slate-800"
-                        onClick={() => router.push(`/jobs/${job.id}`)}
+                  <div className="space-y-4">
+                    {/* Select All Header */}
+                    <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800">
+                      <button
+                        onClick={toggleSelectAll}
+                        className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className={`w-2.5 h-2.5 rounded-full ${job.state === 'DONE' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,180,120,0.5)]' : 'bg-amber-500 animate-pulse shadow-[0_0_10px_#f59e0b80]'}`} />
-                            <div>
-                                <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-amber-600 transition-colors truncate max-w-[200px] md:max-w-md">
-                                  {job?.topic || 'Untitled Production'}
-                                </h4>
-                                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">
-                                  {formatDate(job?.scheduledAt)}
-                                </p>
+                        {selectedJobs.size === jobs.length ? (
+                          <CheckSquare size={20} className="text-amber-500" />
+                        ) : (
+                          <Square size={20} className="text-slate-400" />
+                        )}
+                      </button>
+                      <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                        {selectedJobs.size === jobs.length ? '전체 해제' : '전체 선택'}
+                      </span>
+                      <span className="text-xs text-slate-400 dark:text-slate-500 ml-auto">
+                        총 {jobs.length}개 프로젝트
+                      </span>
+                    </div>
+
+                    {/* Job List */}
+                    <div className="grid gap-3">
+                      {jobs.map((job) => (
+                        <LabelCard 
+                          key={job.id} 
+                          className={`cursor-pointer group transition-all border ${
+                            selectedJobs.has(job.id) 
+                              ? 'border-amber-400 bg-amber-50/50 dark:bg-amber-900/10' 
+                              : 'border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900/50'
+                          }`}
+                          onClick={() => router.push(`/jobs/${job.id}`)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              {/* Checkbox */}
+                              <button
+                                onClick={(e) => toggleJobSelection(e, job.id)}
+                                className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors flex-shrink-0"
+                              >
+                                {selectedJobs.has(job.id) ? (
+                                  <CheckSquare size={20} className="text-amber-500" />
+                                ) : (
+                                  <Square size={20} className="text-slate-300 dark:text-slate-600" />
+                                )}
+                              </button>
+                              
+                              <div className={`w-2.5 h-2.5 rounded-full ${job.state === 'DONE' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,180,120,0.5)]' : 'bg-amber-500 animate-pulse shadow-[0_0_10px_#f59e0b80]'}`} />
+                              <div>
+                                  <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-amber-600 transition-colors truncate max-w-[200px] md:max-w-md">
+                                    {job?.topic || 'Untitled Production'}
+                                  </h4>
+                                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">
+                                    {formatDate(job?.scheduledAt)}
+                                  </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <button
+                                onClick={(e) => handleDeleteJob(e, job.id)}
+                                className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                              <ChevronRight className="text-slate-300 group-hover:translate-x-1 transition-transform" />
                             </div>
                           </div>
-                          <div className="flex items-center gap-4">
-                            <button
-                              onClick={(e) => handleDeleteJob(e, job.id)}
-                              className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                            <ChevronRight className="text-slate-300 group-hover:translate-x-1 transition-transform" />
-                          </div>
-                        </div>
-                      </LabelCard>
-                    ))}
+                        </LabelCard>
+                      ))}
+                    </div>
                   </div>
                 )}
               </section>

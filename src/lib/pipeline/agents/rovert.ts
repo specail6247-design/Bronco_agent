@@ -12,17 +12,23 @@ export async function rovert(context: AgentContext): Promise<AgentResult> {
   const { id: jobId } = context.job;
   const script = scriptArtifact.contentJson as any;
 
+  // Defensive: Extract script data safely
+  const scriptTitle = script?.title || 'Untitled Script';
+  const scriptHook = script?.hook || '';
+  const scriptBody = script?.body || '';
+  const bodySnippet = scriptBody.length > 500 ? scriptBody.substring(0, 500) + '...' : scriptBody;
+
   try {
-    await logActivity(jobId, 'rovert', 'THOUGHT', `Visualizing scenes for: "${script.title}"`);
+    await logActivity(jobId, 'rovert', 'THOUGHT', `Visualizing scenes for: "${scriptTitle}"`);
     await logActivity(jobId, 'rovert', 'ACTION', `Generating technical shot lists and visual prompts...`);
 
     const prompt = `
       You are Rovert, an expert AI video director. 
       Analyze the following script and create a detailed storyboard/shot list for a high-quality video.
 
-      Script Title: ${script.title}
-      Script Hook: ${script.hook}
-      Script Body Snippet: ${script.body.substring(0, 500)}...
+      Script Title: ${scriptTitle}
+      Script Hook: ${scriptHook}
+      Script Body Snippet: ${bodySnippet}
 
       Tasks:
       1. Divide the script into logical scenes.

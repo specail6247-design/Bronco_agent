@@ -15,21 +15,32 @@ export async function tim(context: AgentContext): Promise<AgentResult> {
   const script = scriptArtifact.contentJson as any;
   const storyboard = storyboardArtifact.contentJson as any;
 
+  // Defensive: Extract data safely
+  const scriptTitle = script?.title || 'Untitled Video';
+  const scriptHook = script?.hook || '';
+  const scriptCta = script?.cta || '';
+  const scenes = Array.isArray(storyboard?.scenes) ? storyboard.scenes : [];
+
   try {
-    await logActivity(jobId, 'tim', 'THOUGHT', `Constructing video timeline for ${script.title}`);
-    await logActivity(jobId, 'tim', 'ACTION', `Assembling ${storyboard.scenes?.length || 0} scenes into Shotstack timeline`);
+    await logActivity(jobId, 'tim', 'THOUGHT', `Constructing video timeline for ${scriptTitle}`);
+    await logActivity(jobId, 'tim', 'ACTION', `Assembling ${scenes.length} scenes into Shotstack timeline`);
+
+    // Defensive: Handle empty scenes array
+    if (scenes.length === 0) {
+      await logActivity(jobId, 'tim', 'THOUGHT', `No scenes found in storyboard. Creating placeholder timeline.`);
+    }
 
     const timeline = {
       tracks: [
         {
-          clips: storyboard.scenes.map((scene: any, index: number) => ({
+          clips: scenes.map((scene: any, index: number) => ({
             asset: {
               type: 'title',
-              text: scene.description.substring(0, 30) + '...',
+              text: (scene?.description || scene?.text || 'Scene').substring(0, 30) + '...',
               style: 'minimal'
             },
             start: index * 5,
-            length: scene.duration || 5
+            length: scene?.duration || 5
           }))
         }
       ]
@@ -52,9 +63,9 @@ export async function tim(context: AgentContext): Promise<AgentResult> {
 
     const metadata = platforms.map((platform: Platform) => ({
       platform,
-      title: script.title,
-      description: `${script.hook}\n\n${script.cta}\n\n#${context.job.topic.replace(/\s/g, '')}`,
-      hashtags: ['bronco', 'ai', context.job.topic.replace(/\s/g, '')],
+      title: scriptTitle,
+      description: `${scriptHook}\n\n${scriptCta}\n\n#${context.job.topic?.replace(/\s/g, '') || 'bronco'}`,
+      hashtags: ['bronco', 'ai', context.job.topic?.replace(/\s/g, '') || 'video'],
       thumbnailUrl,
       videoUrl,
     }));

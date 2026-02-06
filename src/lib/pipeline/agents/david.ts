@@ -28,14 +28,38 @@ export async function david(context: AgentContext): Promise<AgentResult> {
         if (meta.platform === 'tiktok') await refreshTikTokToken(userId);
         if (meta.platform === 'threads') await refreshThreadsToken(userId);
 
+        // Defensive: Check adapter exists and has required methods
         const adapter = getAdapter(meta.platform);
+        if (!adapter || typeof adapter.publish !== 'function') {
+          await logActivity(jobId, 'david', 'THOUGHT', `Skipping ${meta.platform}: Adapter not fully implemented yet.`);
+          results.push({
+            platform: meta.platform,
+            status: 'skipped',
+            error: 'Adapter not available'
+          });
+          continue;
+        }
         
         // Publish
         const pubResult = await adapter.publish(meta, pkg.videoUrl, pkg.thumbnailUrl);
         
+        // Defensive: Validate pubResult before accessing
+        if (!pubResult || !pubResult.postId) {
+          throw new Error('Publish returned invalid result (missing postId)');
+        }
+        
         await logActivity(jobId, 'david', 'THOUGHT', `Publication success on ${meta.platform} (ID: ${pubResult.postId}). Verifying link integrity...`);
-        // Verify
-        const verifyResult = await adapter.verify(pubResult.postId);
+        
+        // Verify (optional - may not be implemented for all adapters)
+        let verifyResult = { status: 'unverified' };
+        if (typeof adapter.verify === 'function') {
+          try {
+            verifyResult = await adapter.verify(pubResult.postId);
+          } catch (verifyErr) {
+            console.warn(`[David] Verify failed for ${meta.platform}:`, verifyErr);
+            verifyResult = { status: 'verify_error' };
+          }
+        }
 
         results.push({
           platform: meta.platform,

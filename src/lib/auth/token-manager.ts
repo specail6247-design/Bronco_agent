@@ -3,7 +3,7 @@ import { getAdminDb } from '@/lib/firebase/admin';
 import { getYouTubeOAuthClient } from './youtube';
 import { getStandardRedirectUri } from './utils';
 
-const adminDb = getAdminDb();
+// NOTE: adminDb is now fetched inside each function to avoid module initialization issues
 
 /**
  * Universal Token Refresher
@@ -13,6 +13,7 @@ const adminDb = getAdminDb();
 // --- 1. YouTube Refresh ---
 export async function refreshYouTubeToken(userId: string): Promise<string | null> {
   try {
+    const adminDb = getAdminDb();
     const userRef = adminDb.collection('users').doc(userId);
     const connRef = userRef.collection('connections').doc('youtube');
     const doc = await connRef.get();
@@ -53,6 +54,7 @@ export async function refreshYouTubeToken(userId: string): Promise<string | null
 // --- 2. X (Twitter) Refresh ---
 export async function refreshXToken(userId: string): Promise<string | null> {
   try {
+    const adminDb = getAdminDb();
     const userRef = adminDb.collection('users').doc(userId);
     const connRef = userRef.collection('connections').doc('x');
     const doc = await connRef.get();
@@ -112,6 +114,7 @@ export async function refreshXToken(userId: string): Promise<string | null> {
 // --- 3. TikTok Refresh ---
 export async function refreshTikTokToken(userId: string): Promise<string | null> {
   try {
+    const adminDb = getAdminDb();
     const userRef = adminDb.collection('users').doc(userId);
     const connRef = userRef.collection('connections').doc('tiktok');
     const doc = await connRef.get();
@@ -164,6 +167,7 @@ export async function refreshTikTokToken(userId: string): Promise<string | null>
 // --- 4. Threads Refresh ---
 export async function refreshThreadsToken(userId: string): Promise<string | null> {
   try {
+    const adminDb = getAdminDb();
     const userRef = adminDb.collection('users').doc(userId);
     const connRef = userRef.collection('connections').doc('threads');
     const doc = await connRef.get();
